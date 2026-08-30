@@ -1,0 +1,18 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = "Flight Booking Engine Backend API"
+readme = "README.md"
+
+authors = [
+    { name = "jenish-ad", email = "adhicary.jen@gmail.com" }
+]
+
+requires-python = ">=3.10"
+
+dependencies = [
+    "fastapi[standard]>=0.141.1",
+]
+
+[tool.fastapi]
+entrypoint = "app.main:app"
