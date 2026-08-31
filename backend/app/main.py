@@ -1,1 +1,8 @@
-"""FastAPI application entry point and application lifecycle configuration."""
+from fastapi import FastAPI
+
+app = FastAPI()
+
+
+@app.get("/")
+def hello():
+    return {"message": "Flight Booking API"}

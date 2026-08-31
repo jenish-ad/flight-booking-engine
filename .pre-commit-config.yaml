@@ -1,0 +1,18 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.12.11
+    hooks:
+    #This is the linter.
+      - id: ruff-check
+        args: [--fix]
+    #This is the formatter
+      - id: ruff-format
+  
+  - repo: https://github.com/christophmeissner/pytest-pre-commit
+    rev: 1.0.0
+    hooks:
+      - id: pytest
+        entry: bash -c 'PYTHONPATH=. pytest'
+        language: system
+        pass_filenames: false
+        always_run: true
