@@ -12,9 +12,12 @@ requires-python = ">=3.10"
 
 dependencies = [
     "aiosmtplib>=5.1.2",
+    "fastapi-mail>=1.6.8",
     "fastapi[standard]>=0.141.1",
     "httpx>=0.28.1",
     "passlib>=1.7.4",
+    "psycopg2-binary>=2.9.12",
+    "pyjwt>=2.13.0",
     "pytest>=9.1.1",
     "python-dotenv>=1.2.3",
     "ruff>=0.16.5",

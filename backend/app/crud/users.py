@@ -10,7 +10,7 @@ def get_user_by_email(session: Session, email: str):
 
 def create_user(session: Session, email: str, password: str):
     hashed_password = hash_password(password)
-    user = UserInDB(email=email, hashed_password=hashed_password)
+    user = UserInDB(email=email, password=hashed_password)
     session.add(user)
     session.commit()
     session.refresh(user)

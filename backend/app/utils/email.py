@@ -1,25 +1,38 @@
 import os
-from email.message import EmailMessage
 
-from aiosmtplib import SMTP
 from dotenv import load_dotenv
+from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
+from pydantic import EmailStr
 
 load_dotenv()
 
+conf = ConnectionConfig(
+    MAIL_USERNAME=os.getenv("MAIL_USERNAME"),
+    MAIL_PASSWORD=os.getenv("MAIL_PASSWORD"),
+    MAIL_FROM=os.getenv("MAIL_FROM_NAME"),
+    MAIL_SERVER=os.getenv("MAIL_SERVER"),
+    MAIL_PORT=os.getenv("MAIL_PORT"),
+    MAIL_STARTTLS=True,
+    MAIL_SSL_TLS=False,
+    USE_CREDENTIALS=True,
+    VALIDATE_CERTS=True,
+)
 
-async def send_email_async(subject: str, recipient: str, body: str):
-    message = EmailMessage()
-    message["From"] = f"{os.getenv('MAIL_FROM_NAME')}"
-    message["To"] = recipient
-    message["Subject"] = subject
 
-    smtp = SMTP(
-        hostname=os.getenv("MAIL_HOST"),
-        port=int(os.getenv("MAIL_PORT")),
-        start_tls=True,
+async def send_email_async(subject: str, recipients: list[EmailStr], body_text: str):
+    html = f"""
+    <h2>{subject}</h2>
+    <br/>
+    <p>{body_text}</p>
+    <br/>
+    <br/>
+    <br/>
+    <p>Best Regards</p>
+    <p>Flight Booking Engine</p>
+    """
+    message = MessageSchema(
+        subject=subject, recipients=recipients, body=html, subtype=MessageType.html
     )
 
-    await smtp.connect()
-    await smtp.starttls()
-    await smtp.login(os.getenv("MAIL_USERNAME"), os.getenv("MAIL_PASSWORD"))
-    await smtp.quit()
+    fm = FastMail(conf)
+    await fm.send_message(message)
