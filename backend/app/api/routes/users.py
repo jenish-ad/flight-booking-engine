@@ -6,7 +6,7 @@ from sqlmodel import Session
 
 from app.crud.database import get_session
 from app.crud.users import create_user, get_user_by_email
-from app.models.auth import Token
+from app.schemas.auth import Token
 from app.schemas.users import UserCreate, UserRead
 from app.utils.email import send_email_async
 from app.utils.security import authenticate_user, create_access_token
