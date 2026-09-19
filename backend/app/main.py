@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from app.api.routes import users
+from app.api.routes import flights, users
 from app.crud.database import init_db
 
 
@@ -14,6 +14,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(users.router)
+app.include_router(flights.router)
 
 
 @app.get("/")
