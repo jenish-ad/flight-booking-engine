@@ -7,7 +7,13 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
 AirportCode = Annotated[
-    str, StringConstraints(strip_whitespace=True, to_upper=True, pattern=r"^[A-Z]{3}$")
+    str,
+    StringConstraints(strip_whitespace=True, to_upper=True, pattern=r"^[A-Za-z]{3}$"),
+]
+
+CurrencyCode = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True, to_upper=True, pattern=r"^[A-Za-z]{3}$"),
 ]
 
 
@@ -83,3 +89,34 @@ class FlightOffer(BaseModel):
 class FlightSearchResponse(BaseModel):
     offer_request_id: str
     offers: list[FlightOffer]
+
+
+class PriceConfirmRequest(BaseModel):
+    offer_id: str = Field(pattern=r"^off_[A-Za-z0-9]+$")
+    expected_amount: Decimal = Field(ge=0, description="Price the user saw in search")
+    expected_currency: CurrencyCode
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "offer_id": "off_0000AEdGRhtp5AUUiJnF9N",
+                    "expected_amount": "125.40",
+                    "expected_currency": "AUD",
+                }
+            ]
+        }
+    )
+
+
+class PricedOffer(BaseModel):
+    offer: FlightOffer
+    requires_instant_payment: bool
+    price_guaranteed_until: datetime | None
+    passenger_identity_documents_required: bool
+
+
+class PriceConfirmResponse(PricedOffer):
+    price_changed: bool
+    previous_amount: Decimal
+    previous_currency: str

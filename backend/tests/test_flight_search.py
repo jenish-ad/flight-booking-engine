@@ -3,12 +3,6 @@ from datetime import datetime, timedelta, timezone
 
 import httpx
 import pytest
-from app.api.deps import get_duffel_service
-from app.api.routes.flights import router
-from app.core.config import get_settings
-from app.services.duffel import DuffelService
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
 
 SEARCH = {
     "origin": "SYD",
@@ -55,33 +49,6 @@ def provider_response(segments=None):
             ],
         }
     }
-
-
-@pytest.fixture
-def client_factory(monkeypatch):
-    clients = []
-    monkeypatch.setenv("DUFFEL_BASE_URL", "https://duffel.test")
-
-    def make(handler, token="test-placeholder"):
-        monkeypatch.setenv("DUFFEL_ACCESS_TOKEN", token)
-        settings = get_settings()
-        app = FastAPI()
-        app.include_router(router)
-
-        async def service():
-            async with httpx.AsyncClient(
-                transport=httpx.MockTransport(handler)
-            ) as client:
-                yield DuffelService(settings, client)
-
-        app.dependency_overrides[get_duffel_service] = service
-        client = TestClient(app)
-        clients.append(client)
-        return client
-
-    yield make
-    for client in clients:
-        client.close()
 
 
 def test_search_request_and_response(client_factory):

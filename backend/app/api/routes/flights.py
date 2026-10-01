@@ -1,20 +1,21 @@
+from datetime import datetime, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.deps import get_duffel_service
-from app.schemas.flight import FlightSearchRequest, FlightSearchResponse
+from app.schemas.flight import (
+    FlightSearchRequest,
+    FlightSearchResponse,
+    PriceConfirmRequest,
+    PriceConfirmResponse,
+)
 from app.services.duffel import DuffelError, DuffelService
 
-router = APIRouter()
+router = APIRouter(prefix="/flights", tags=["flights"])
 
 
-@router.get("/flights")
-async def get_flights():
-    return {"message": "List of flights"}
-
-
-@router.post("/flights/search", response_model=FlightSearchResponse, tags=["flights"])
+@router.post("/search", response_model=FlightSearchResponse)
 async def search_flights(
     search: FlightSearchRequest,
     service: Annotated[DuffelService, Depends(get_duffel_service)],
@@ -23,3 +24,30 @@ async def search_flights(
         return await service.search(search)
     except DuffelError as exc:
         raise HTTPException(status_code=exc.status_code, detail=exc.detail) from None
+
+
+@router.post("/price", response_model=PriceConfirmResponse)
+async def confirm_price(
+    request: PriceConfirmRequest,
+    service: Annotated[DuffelService, Depends(get_duffel_service)],
+) -> PriceConfirmResponse:
+    try:
+        priced = await service.get_offer(request.offer_id)
+    except DuffelError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.detail) from None
+
+    offer = priced.offer
+    if offer.expires_at <= datetime.now(timezone.utc):
+        raise HTTPException(
+            status_code=410, detail="This offer has expired. Please search again."
+        )
+
+    return PriceConfirmResponse(
+        **priced.model_dump(),
+        price_changed=(
+            offer.total_amount != request.expected_amount
+            or offer.total_currency != request.expected_currency
+        ),
+        previous_amount=request.expected_amount,
+        previous_currency=request.expected_currency,
+    )

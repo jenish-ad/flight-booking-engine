@@ -4,7 +4,9 @@ from dotenv import load_dotenv
 from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
 from pydantic import EmailStr
 
-load_dotenv()
+from app.core.config import ENV_FILE
+
+load_dotenv(ENV_FILE)
 
 conf = ConnectionConfig(
     MAIL_USERNAME=os.getenv("MAIL_USERNAME"),

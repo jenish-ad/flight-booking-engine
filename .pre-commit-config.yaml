@@ -1,18 +1,64 @@
+# Pre-commit hooks for the backend and frontend.
+#
+# Install:  uv run --project backend python -m pre_commit install
+# Run all:  uv run --project backend python -m pre_commit run --all-files
+#
+# All hooks are defined locally and scoped by path, so backend hooks run only
+# when backend files are staged and frontend hooks only when frontend files are.
+#
+# Backend hooks are invoked via `uv run ... python -m` so that they use the tool
+# versions pinned in the backend environment and do not depend on virtualenv
+# executable shims, which may be blocked by Windows Application Control policies.
+#
+# Frontend hooks require dependencies to be installed (`npm install` in frontend/).
 repos:
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.12.11
+  - repo: local
     hooks:
-    #This is the linter.
+      # ---------------------------------------------------------------- Backend
+
+      # Lint staged Python files and apply safe automatic fixes.
+      # If files are modified, the commit is aborted; re-stage and commit again.
       - id: ruff-check
-        args: [--fix]
-    #This is the formatter
+        name: ruff check
+        entry: uv run --project backend python -m ruff check --fix
+        language: system
+        types: [python]
+        files: ^backend/
+
+      # Format staged Python files.
+      # If files are modified, the commit is aborted; re-stage and commit again.
       - id: ruff-format
-  
-  - repo: https://github.com/christophmeissner/pytest-pre-commit
-    rev: 1.0.0
-    hooks:
+        name: ruff format
+        entry: uv run --project backend python -m ruff format
+        language: system
+        types: [python]
+        files: ^backend/
+
+      # Run the full backend test suite when any backend file changes.
+      # External services are mocked, so the suite runs offline.
+      # Invoked without a shell wrapper to avoid resolving to WSL bash on Windows.
       - id: pytest
-        entry: bash -c 'PYTHONPATH=. pytest'
+        name: pytest
+        entry: uv run --project backend python -m pytest backend/tests
         language: system
         pass_filenames: false
-        always_run: true
+        files: ^backend/
+
+      # --------------------------------------------------------------- Frontend
+
+      # Lint the frontend with the project's ESLint configuration.
+      - id: eslint
+        name: eslint
+        entry: npm --prefix frontend run lint
+        language: system
+        pass_filenames: false
+        files: ^frontend/.*\.(js|jsx|ts|tsx|mjs)$
+
+      # Type-check the frontend without emitting build output.
+      # Runs on the whole project, as type errors can span multiple files.
+      - id: tsc
+        name: tsc
+        entry: npx --prefix frontend tsc --noEmit -p frontend
+        language: system
+        pass_filenames: false
+        files: ^frontend/.*\.(ts|tsx)$

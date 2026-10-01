@@ -3,7 +3,9 @@ import os
 from dotenv import load_dotenv
 from sqlmodel import Session, SQLModel, create_engine
 
-load_dotenv()
+from app.core.config import ENV_FILE
+
+load_dotenv(ENV_FILE)
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 

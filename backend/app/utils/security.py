@@ -7,9 +7,10 @@ from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from sqlmodel import Session, select
 
+from app.core.config import ENV_FILE
 from app.models.users import UserInDB
 
-load_dotenv()
+load_dotenv(ENV_FILE)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
