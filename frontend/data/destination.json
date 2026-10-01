@@ -1,0 +1,30 @@
+[
+  {
+    "city": "Paris",
+    "country": "FRANCE",
+    "mood": "Flights to Paris",
+    "detail": "Search flights to Paris for your departure city and dates.",
+    "colors": "bg-[#ebd6ce] text-[#994d43]"
+  },
+  {
+    "city": "Tokyo",
+    "country": "JAPAN",
+    "mood": "Flights to Tokyo",
+    "detail": "Find flights to Tokyo that fit your schedule.",
+    "colors": "bg-[#d3e1e8] text-[#345c79]"
+  },
+  {
+    "city": "Santorini",
+    "country": "GREECE",
+    "mood": "Flights to Santorini",
+    "detail": "Check flights to Santorini for your travel dates.",
+    "colors": "bg-[#efe4cb] text-[#9a7436]"
+  },
+  {
+    "city": "Bali",
+    "country": "INDONESIA",
+    "mood": "Flights to Bali",
+    "detail": "Search flights to Bali from your preferred airport.",
+    "colors": "bg-[#d6e2d5] text-[#3d674e]"
+  }
+]

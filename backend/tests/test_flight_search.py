@@ -1,17 +1,14 @@
-"""Exercise the API and real service with a simulated Duffel HTTP transport."""
-
 import json
 from datetime import datetime, timedelta, timezone
 
 import httpx
 import pytest
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-
 from app.api.deps import get_duffel_service
 from app.api.routes.flights import router
-from app.core.config import Settings
+from app.core.config import get_settings
 from app.services.duffel import DuffelService
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 SEARCH = {
     "origin": "SYD",
@@ -61,10 +58,13 @@ def provider_response(segments=None):
 
 
 @pytest.fixture
-def client_factory():
+def client_factory(monkeypatch):
     clients = []
+    monkeypatch.setenv("DUFFEL_BASE_URL", "https://duffel.test")
 
     def make(handler, token="test-placeholder"):
+        monkeypatch.setenv("DUFFEL_ACCESS_TOKEN", token)
+        settings = get_settings()
         app = FastAPI()
         app.include_router(router)
 
@@ -72,7 +72,7 @@ def client_factory():
             async with httpx.AsyncClient(
                 transport=httpx.MockTransport(handler)
             ) as client:
-                yield DuffelService(Settings(duffel_access_token=token), client)
+                yield DuffelService(settings, client)
 
         app.dependency_overrides[get_duffel_service] = service
         client = TestClient(app)
@@ -89,7 +89,7 @@ def test_search_request_and_response(client_factory):
         assert request.method == "POST"
         assert (
             str(request.url)
-            == "https://api.duffel.com/air/offer_requests?return_offers=true"
+            == "https://duffel.test/air/offer_requests?return_offers=true"
         )
         for key, value in {
             "Authorization": "Bearer test-placeholder",
