@@ -4,6 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.deps import get_duffel_service
+from app.schemas.booking import CreateOrderRequest, OrderResponse
 from app.schemas.flight import (
     FlightSearchRequest,
     FlightSearchResponse,
@@ -51,3 +52,14 @@ async def confirm_price(
         previous_amount=request.expected_amount,
         previous_currency=request.expected_currency,
     )
+
+
+@router.post("/order", response_model=OrderResponse, status_code=201)
+async def create_order(
+    order: CreateOrderRequest,
+    service: Annotated[DuffelService, Depends(get_duffel_service)],
+) -> OrderResponse:
+    try:
+        return await service.create_order(order)
+    except DuffelError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.detail) from None

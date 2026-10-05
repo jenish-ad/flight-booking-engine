@@ -1,5 +1,3 @@
-"""Request and response schemas for one-way flight searches."""
-
 from datetime import date, datetime, timezone
 from decimal import Decimal
 from typing import Annotated, Literal
@@ -15,6 +13,9 @@ CurrencyCode = Annotated[
     str,
     StringConstraints(strip_whitespace=True, to_upper=True, pattern=r"^[A-Za-z]{3}$"),
 ]
+
+OfferId = Annotated[str, StringConstraints(pattern=r"^off_[A-Za-z0-9]+$")]
+PassengerId = Annotated[str, StringConstraints(pattern=r"^pas_[A-Za-z0-9]+$")]
 
 
 class FlightSearchRequest(BaseModel):
@@ -77,22 +78,29 @@ class FlightSlice(BaseModel):
     segments: list[FlightSegment] = Field(min_length=1)
 
 
+class FlightPassenger(BaseModel):
+    id: PassengerId
+    type: str | None = None
+
+
 class FlightOffer(BaseModel):
     id: str
     airline: Airline
     total_amount: Decimal = Field(ge=0)
     total_currency: str
     expires_at: datetime
+    passengers: list[FlightPassenger] = Field(min_length=1)
     slices: list[FlightSlice] = Field(min_length=1)
 
 
 class FlightSearchResponse(BaseModel):
     offer_request_id: str
+    passengers: list[FlightPassenger] = Field(min_length=1)
     offers: list[FlightOffer]
 
 
 class PriceConfirmRequest(BaseModel):
-    offer_id: str = Field(pattern=r"^off_[A-Za-z0-9]+$")
+    offer_id: OfferId
     expected_amount: Decimal = Field(ge=0, description="Price the user saw in search")
     expected_currency: CurrencyCode
 

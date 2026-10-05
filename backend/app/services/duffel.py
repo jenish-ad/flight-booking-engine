@@ -1,8 +1,7 @@
-"""Duffel flight search/pricing transport and response normalization."""
-
 import httpx
 
 from app.core.config import Settings
+from app.schemas.booking import CreateOrderRequest, OrderResponse
 from app.schemas.flight import (
     FlightOffer,
     FlightSearchRequest,
@@ -99,6 +98,7 @@ class DuffelService:
             data = response.json()["data"]
             return FlightSearchResponse(
                 offer_request_id=data["id"],
+                passengers=data["passengers"],
                 offers=[self._normalize_offer(offer) for offer in data["offers"]],
             )
         except (KeyError, TypeError, ValueError, IndexError, AttributeError):
@@ -134,10 +134,53 @@ class DuffelService:
                 502, "Duffel returned an invalid offer response."
             ) from None
 
+    async def create_order(self, order: CreateOrderRequest) -> OrderResponse:
+        payload = {
+            "data": {
+                "type": "instant",
+                "selected_offers": [order.offer_id],
+                "passengers": [
+                    passenger.model_dump(mode="json") for passenger in order.passengers
+                ],
+                "payments": [
+                    {
+                        "type": "balance",
+                        "amount": str(order.amount),
+                        "currency": order.currency,
+                    }
+                ],
+            }
+        }
+        response = await self._request("POST", "/air/orders", json=payload)
+        if response.status_code in (400, 404, 410, 422):
+            raise DuffelError(
+                409,
+                "This offer can no longer be booked. Please confirm the price again.",
+            )
+        if not response.is_success:
+            raise DuffelError(
+                502, "Duffel could not create the order. Please try again later."
+            )
+
+        try:
+            data = response.json()["data"]
+            return OrderResponse(
+                id=data["id"],
+                booking_reference=data["booking_reference"],
+                total_amount=data["total_amount"],
+                total_currency=data["total_currency"],
+                created_at=data["created_at"],
+                slices=self._normalize_slices(data["slices"]),
+            )
+        except (KeyError, TypeError, ValueError, IndexError, AttributeError):
+            raise DuffelError(
+                502, "Duffel returned an invalid order response."
+            ) from None
+
     @staticmethod
-    def _normalize_offer(offer: dict) -> FlightOffer:
+    def _normalize_slices(raw_slices: list[dict]) -> list[dict]:
         slices = []
-        for flight_slice in offer["slices"]:
+        for flight_slice in raw_slices:
             segments = flight_slice["segments"]
             slices.append(
                 {
@@ -162,11 +205,16 @@ class DuffelService:
                     ],
                 }
             )
+        return slices
+
+    @staticmethod
+    def _normalize_offer(offer: dict) -> FlightOffer:
         return FlightOffer(
             id=offer["id"],
             airline=offer["owner"],
             total_amount=offer["total_amount"],
             total_currency=offer["total_currency"],
             expires_at=offer["expires_at"],
-            slices=slices,
+            passengers=offer["passengers"],
+            slices=DuffelService._normalize_slices(offer["slices"]),
         )

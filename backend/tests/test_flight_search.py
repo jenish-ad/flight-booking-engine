@@ -14,6 +14,10 @@ SEARCH = {
     "cabin_class": "economy",
 }
 AIRLINE = {"name": "Test Airways", "iata_code": "ZZ"}
+PASSENGERS = [
+    {"id": "pas_first", "type": "adult"},
+    {"id": "pas_second", "type": "adult"},
+]
 
 
 def airport(code):
@@ -37,9 +41,11 @@ def provider_response(segments=None):
     return {
         "data": {
             "id": "orq_test",
+            "passengers": PASSENGERS,
             "offers": [
                 {
                     "id": "off_test",
+                    "passengers": PASSENGERS,
                     "owner": AIRLINE,
                     "total_amount": "123.45",
                     "total_currency": "AUD",
@@ -82,7 +88,9 @@ def test_search_request_and_response(client_factory):
 
     response = client_factory(handler).post("/flights/search", json=SEARCH)
     assert response.status_code == 200
+    assert response.json()["passengers"] == PASSENGERS
     offer = response.json()["offers"][0]
+    assert offer["passengers"] == PASSENGERS
     assert offer["id"] == "off_test"
     assert offer["airline"] == AIRLINE
     assert offer["total_amount"] == "123.45"
@@ -93,6 +101,18 @@ def test_search_request_and_response(client_factory):
     assert flight_slice["destination"]["iata_code"] == "MEL"
     assert flight_slice["segments"][0]["flight_number"] == "123"
     assert "test-placeholder" not in response.text
+
+
+@pytest.mark.parametrize("location", ["request", "offer"])
+@pytest.mark.parametrize("passengers", [None, [], [{"id": "invalid"}], [{}]])
+def test_invalid_passenger_references(client_factory, location, passengers):
+    payload = provider_response()
+    target = payload["data"] if location == "request" else payload["data"]["offers"][0]
+    target["passengers"] = passengers
+    response = client_factory(lambda _: httpx.Response(201, json=payload)).post(
+        "/flights/search", json=SEARCH
+    )
+    assert response.status_code == 502
 
 
 def test_connections_and_intermediate_stops(client_factory):
@@ -109,7 +129,7 @@ def test_connections_and_intermediate_stops(client_factory):
 @pytest.mark.parametrize(
     "payload",
     [
-        {"data": {"id": "orq_test", "offers": []}},
+        {"data": {"id": "orq_test", "passengers": PASSENGERS, "offers": []}},
         {},
         {"data": {"id": "orq_test", "offers": None}},
     ],

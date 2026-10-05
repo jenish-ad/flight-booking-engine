@@ -18,6 +18,7 @@ def airport(code):
 def provider_offer(**changes):
     offer = {
         "id": "off_test",
+        "passengers": [{"id": "pas_first", "type": "adult"}],
         "owner": AIRLINE,
         "total_amount": "123.45",
         "total_currency": "AUD",
@@ -68,6 +69,7 @@ def test_price_request_and_unchanged_price(client_factory):
     assert body["previous_amount"] == "123.45"
     assert body["previous_currency"] == "AUD"
     assert body["offer"]["id"] == "off_test"
+    assert body["offer"]["passengers"] == [{"id": "pas_first", "type": "adult"}]
     assert body["offer"]["total_amount"] == "123.45"
     assert body["offer"]["slices"][0]["segments"][0]["flight_number"] == "123"
     assert body["requires_instant_payment"] is False
@@ -123,6 +125,14 @@ def test_missing_payment_requirements_defaults_to_instant_payment(client_factory
     assert body["requires_instant_payment"] is True
     assert body["price_guaranteed_until"] is None
     assert body["passenger_identity_documents_required"] is False
+
+
+@pytest.mark.parametrize("passengers", [None, [], [{"id": "invalid"}], [{}]])
+def test_invalid_passenger_references(client_factory, passengers):
+    response = client_factory(
+        lambda _: httpx.Response(200, json=provider_offer(passengers=passengers))
+    ).post("/flights/price", json=PRICE)
+    assert response.status_code == 502
 
 
 def test_expired_offer(client_factory):
