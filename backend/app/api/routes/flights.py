@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException
 
-from app.api.deps import DuffelServiceDep
+from app.api.deps import CurrentUser, DuffelServiceDep
 from app.schemas.booking import CreateOrderRequest, OrderResponse
 from app.schemas.flight import (
     FlightSearchRequest,
@@ -30,6 +30,7 @@ async def search_flights(
 async def confirm_price(
     request: PriceConfirmRequest,
     service: DuffelServiceDep,
+    current_user: CurrentUser,
 ) -> PriceConfirmResponse:
     try:
         priced = await service.get_offer(request.offer_id)
@@ -57,6 +58,7 @@ async def confirm_price(
 async def create_order(
     order: CreateOrderRequest,
     service: DuffelServiceDep,
+    current_user: CurrentUser,
 ) -> OrderResponse:
     try:
         return await service.create_order(order)
