@@ -4,17 +4,17 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.api.deps import CurrentUser, SessionDep
-from app.crud.users import create_user, get_user_by_email
+from app.crud.users import authenticate_user, create_user, get_user_by_email
 from app.schemas.auth import Token
 from app.schemas.users import UserCreate, UserRead
 from app.services.email import send_email_async
-from app.utils.security import authenticate_user, create_access_token
+from app.utils.security import create_access_token
 
 router = APIRouter(tags=["auth"])
 
 
 @router.post("/register/", response_model=UserRead)
-async def register(
+def register(
     background_task: BackgroundTasks,
     user_in: UserCreate,
     session: SessionDep,
@@ -40,7 +40,7 @@ async def register(
 
 
 @router.post("/token")
-async def login(
+def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     session: SessionDep,
 ) -> Token:
