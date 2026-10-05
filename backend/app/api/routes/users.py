@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.api.deps import SessionDep
+from app.api.deps import CurrentUser, SessionDep
 from app.crud.users import create_user, get_user_by_email
 from app.schemas.auth import Token
 from app.schemas.users import UserCreate, UserRead
@@ -55,3 +55,8 @@ async def login(
 
     access_token = create_access_token(data={"sub": user.email})
     return Token(access_token=access_token, token_type="bearer")
+
+
+@router.get("/users/me", response_model=UserRead)
+def read_current_user(current_user: CurrentUser):
+    return current_user
