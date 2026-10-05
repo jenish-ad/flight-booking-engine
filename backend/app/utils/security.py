@@ -1,22 +1,20 @@
-import os
 from datetime import datetime, timedelta, timezone
 
 import jwt
-from dotenv import load_dotenv
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from sqlmodel import Session, select
 
-from app.core.config import ENV_FILE
+from app.core.config import get_settings
 from app.models.users import UserInDB
 
-load_dotenv(ENV_FILE)
+settings = get_settings()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-ACCESS_TOKEN_EXPIRE = int(os.getenv("ACCESS_TOKEN_EXPIRE"))
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
+ACCESS_TOKEN_EXPIRE = settings.access_token_expire_minutes
+SECRET_KEY = settings.secret_key.get_secret_value()
+ALGORITHM = settings.algorithm
 
 
 def hash_password(password: str) -> str:

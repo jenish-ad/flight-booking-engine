@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 
+import httpx
 from fastapi import FastAPI
 
 from app.api.routes import flights, users
@@ -9,7 +10,10 @@ from app.core.db import init_db
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
-    yield
+    # One shared client for the app's lifetime so connections are pooled across requests.
+    async with httpx.AsyncClient() as client:
+        app.state.http_client = client
+        yield
 
 
 app = FastAPI(lifespan=lifespan)
