@@ -1,9 +1,8 @@
 from datetime import datetime, timezone
-from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 
-from app.api.deps import get_duffel_service
+from app.api.deps import DuffelServiceDep
 from app.schemas.booking import CreateOrderRequest, OrderResponse
 from app.schemas.flight import (
     FlightSearchRequest,
@@ -11,7 +10,7 @@ from app.schemas.flight import (
     PriceConfirmRequest,
     PriceConfirmResponse,
 )
-from app.services.duffel import DuffelError, DuffelService
+from app.services.duffel import DuffelError
 
 router = APIRouter(prefix="/flights", tags=["flights"])
 
@@ -19,7 +18,7 @@ router = APIRouter(prefix="/flights", tags=["flights"])
 @router.post("/search", response_model=FlightSearchResponse)
 async def search_flights(
     search: FlightSearchRequest,
-    service: Annotated[DuffelService, Depends(get_duffel_service)],
+    service: DuffelServiceDep,
 ) -> FlightSearchResponse:
     try:
         return await service.search(search)
@@ -30,7 +29,7 @@ async def search_flights(
 @router.post("/price", response_model=PriceConfirmResponse)
 async def confirm_price(
     request: PriceConfirmRequest,
-    service: Annotated[DuffelService, Depends(get_duffel_service)],
+    service: DuffelServiceDep,
 ) -> PriceConfirmResponse:
     try:
         priced = await service.get_offer(request.offer_id)
@@ -57,7 +56,7 @@ async def confirm_price(
 @router.post("/order", response_model=OrderResponse, status_code=201)
 async def create_order(
     order: CreateOrderRequest,
-    service: Annotated[DuffelService, Depends(get_duffel_service)],
+    service: DuffelServiceDep,
 ) -> OrderResponse:
     try:
         return await service.create_order(order)

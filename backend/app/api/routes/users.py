@@ -2,9 +2,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlmodel import Session
 
-from app.crud.database import get_session
+from app.api.deps import SessionDep
 from app.crud.users import create_user, get_user_by_email
 from app.schemas.auth import Token
 from app.schemas.users import UserCreate, UserRead
@@ -18,7 +17,7 @@ router = APIRouter(tags=["auth"])
 async def register(
     background_task: BackgroundTasks,
     user_in: UserCreate,
-    session: Annotated[Session, Depends(get_session)],
+    session: SessionDep,
 ):
     # It verifies that user is not already registered
     user = get_user_by_email(session, user_in.email)
@@ -43,7 +42,7 @@ async def register(
 @router.post("/token")
 async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    session: Annotated[Session, Depends(get_session)],
+    session: SessionDep,
 ) -> Token:
     user = authenticate_user(session, form_data.username, form_data.password)
 

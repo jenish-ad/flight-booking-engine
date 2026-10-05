@@ -16,6 +16,7 @@ def client_factory(monkeypatch):
 
     def make(handler, token="test-placeholder"):
         monkeypatch.setenv("DUFFEL_ACCESS_TOKEN", token)
+        get_settings.cache_clear()
         settings = get_settings()
         app = FastAPI()
         app.include_router(router)

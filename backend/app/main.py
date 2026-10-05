@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.api.routes import flights, users
-from app.crud.database import init_db
+from app.core.db import init_db
 
 
 @asynccontextmanager

@@ -1,4 +1,5 @@
 import os
+from functools import lru_cache
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -12,6 +13,7 @@ class Settings(BaseModel):
     duffel_base_url: HttpUrl
 
 
+@lru_cache
 def get_settings() -> Settings:
     # Environment variables take precedence over the local .env file.
     load_dotenv(ENV_FILE)
