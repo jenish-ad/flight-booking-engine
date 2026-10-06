@@ -35,8 +35,10 @@ def provider_order(**changes):
         "created_at": "2026-10-05T09:00:00Z",
         "slices": [
             {
+                "id": "sli_test",
                 "segments": [
                     {
+                        "id": "seg_test",
                         "origin": airport("SYD"),
                         "destination": airport("MEL"),
                         "departing_at": "2026-10-20T10:00:00",
@@ -46,7 +48,7 @@ def provider_order(**changes):
                         "marketing_carrier_flight_number": "123",
                         "stops": [],
                     }
-                ]
+                ],
             }
         ],
     }

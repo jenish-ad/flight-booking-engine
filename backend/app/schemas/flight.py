@@ -60,6 +60,7 @@ class Airport(BaseModel):
 
 
 class FlightSegment(BaseModel):
+    id: str
     origin: Airport
     destination: Airport
     departing_at: datetime
@@ -70,6 +71,7 @@ class FlightSegment(BaseModel):
 
 
 class FlightSlice(BaseModel):
+    id: str
     origin: Airport
     destination: Airport
     departing_at: datetime

@@ -1,15 +1,18 @@
 from datetime import datetime, timezone
+from typing import Annotated
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
 from app.api.deps import CurrentUser, DuffelServiceDep
 from app.schemas.booking import CreateOrderRequest, OrderResponse
 from app.schemas.flight import (
     FlightSearchRequest,
     FlightSearchResponse,
+    OfferId,
     PriceConfirmRequest,
     PriceConfirmResponse,
 )
+from app.schemas.seat_map import SeatMapsResponse
 from app.services.duffel import DuffelError
 
 router = APIRouter(prefix="/flights", tags=["flights"])
@@ -52,6 +55,18 @@ async def confirm_price(
         previous_amount=request.expected_amount,
         previous_currency=request.expected_currency,
     )
+
+
+@router.get("/seat-maps", response_model=SeatMapsResponse)
+async def get_seat_maps(
+    offer_id: Annotated[OfferId, Query()],
+    service: DuffelServiceDep,
+    current_user: CurrentUser,
+) -> SeatMapsResponse:
+    try:
+        return await service.get_seat_maps(offer_id)
+    except DuffelError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.detail) from None
 
 
 @router.post("/order", response_model=OrderResponse, status_code=201)

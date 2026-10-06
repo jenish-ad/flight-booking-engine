@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 import httpx
 
 from app.core.config import Settings
@@ -8,6 +10,7 @@ from app.schemas.flight import (
     FlightSearchResponse,
     PricedOffer,
 )
+from app.schemas.seat_map import SeatMap, SeatMapsResponse
 
 
 class DuffelError(Exception):
@@ -134,7 +137,78 @@ class DuffelService:
                 502, "Duffel returned an invalid offer response."
             ) from None
 
+    async def get_seat_maps(self, offer_id: str) -> SeatMapsResponse:
+        response = await self._request(
+            "GET", "/air/seat_maps", params={"offer_id": offer_id}
+        )
+        if response.status_code in (400, 404, 410, 422):
+            raise DuffelError(
+                410, "This offer is no longer available. Please search again."
+            )
+        if not response.is_success:
+            raise DuffelError(
+                502, "Duffel could not load the seat map. Please try again later."
+            )
+
+        try:
+            return SeatMapsResponse(
+                offer_id=offer_id,
+                seat_maps=[
+                    self._normalize_seat_map(seat_map)
+                    for seat_map in response.json()["data"]
+                ],
+            )
+        except (KeyError, TypeError, ValueError, IndexError, AttributeError):
+            raise DuffelError(
+                502, "Duffel returned an invalid seat map response."
+            ) from None
+
+    async def _seats_total(self, order: CreateOrderRequest) -> Decimal:
+        """Check the selected seats against the live seat map and sum their prices.
+
+        The client only sends seat ids, so it cannot change what a seat costs.
+        """
+        seat_maps = (await self.get_seat_maps(order.offer_id)).seat_maps
+        available = {
+            service.id: (seat_map.segment_id, service)
+            for seat_map in seat_maps
+            for cabin in seat_map.cabins
+            for row in cabin.rows
+            for section in row.sections
+            for element in section
+            for service in element.available_services
+        }
+        passenger_ids = {passenger.id for passenger in order.passengers}
+        booked = set()
+        total = Decimal(0)
+        for service_id in order.services:
+            if service_id not in available:
+                raise DuffelError(
+                    409,
+                    "A selected seat is no longer available. Please reload the seat map.",
+                )
+            segment_id, service = available[service_id]
+            if service.passenger_id not in passenger_ids:
+                raise DuffelError(
+                    422, "A selected seat is for a passenger who is not on this order."
+                )
+            if (service.passenger_id, segment_id) in booked:
+                raise DuffelError(
+                    422, "Each passenger can select only one seat per flight."
+                )
+            if service.total_currency != order.currency:
+                raise DuffelError(
+                    409, "Seat prices are in a different currency from the flight."
+                )
+            booked.add((service.passenger_id, segment_id))
+            total += service.total_amount
+        return total
+
     async def create_order(self, order: CreateOrderRequest) -> OrderResponse:
+        amount = order.amount
+        if order.services:
+            amount += await self._seats_total(order)
+
         payload = {
             "data": {
                 "type": "instant",
@@ -145,12 +219,16 @@ class DuffelService:
                 "payments": [
                     {
                         "type": "balance",
-                        "amount": str(order.amount),
+                        "amount": str(amount),
                         "currency": order.currency,
                     }
                 ],
             }
         }
+        if order.services:
+            payload["data"]["services"] = [
+                {"id": service_id, "quantity": 1} for service_id in order.services
+            ]
         response = await self._request("POST", "/air/orders", json=payload)
         if response.status_code in (400, 404, 410, 422):
             raise DuffelError(
@@ -184,6 +262,7 @@ class DuffelService:
             segments = flight_slice["segments"]
             slices.append(
                 {
+                    "id": flight_slice["id"],
                     "origin": segments[0]["origin"],
                     "destination": segments[-1]["destination"],
                     "departing_at": segments[0]["departing_at"],
@@ -193,6 +272,7 @@ class DuffelService:
                     + sum(len(s.get("stops") or []) for s in segments),
                     "segments": [
                         {
+                            "id": segment["id"],
                             "origin": segment["origin"],
                             "destination": segment["destination"],
                             "departing_at": segment["departing_at"],
@@ -206,6 +286,54 @@ class DuffelService:
                 }
             )
         return slices
+
+    @staticmethod
+    def _normalize_seat_map(seat_map: dict) -> SeatMap:
+        return SeatMap(
+            id=seat_map["id"],
+            slice_id=seat_map["slice_id"],
+            segment_id=seat_map["segment_id"],
+            cabins=[
+                {
+                    "cabin_class": cabin["cabin_class"],
+                    "deck": cabin["deck"],
+                    "aisles": cabin["aisles"],
+                    "wings": cabin.get("wings"),
+                    "rows": [
+                        {
+                            "sections": [
+                                [
+                                    {
+                                        "type": element["type"],
+                                        "designator": element.get("designator"),
+                                        "name": element.get("name"),
+                                        "disclosures": element.get("disclosures") or [],
+                                        "available_services": [
+                                            {
+                                                "id": service["id"],
+                                                "passenger_id": service["passenger_id"],
+                                                "total_amount": service["total_amount"],
+                                                "total_currency": service[
+                                                    "total_currency"
+                                                ],
+                                            }
+                                            for service in element.get(
+                                                "available_services"
+                                            )
+                                            or []
+                                        ],
+                                    }
+                                    for element in section["elements"]
+                                ]
+                                for section in row["sections"]
+                            ]
+                        }
+                        for row in cabin["rows"]
+                    ],
+                }
+                for cabin in seat_map["cabins"]
+            ],
+        )
 
     @staticmethod
     def _normalize_offer(offer: dict) -> FlightOffer:

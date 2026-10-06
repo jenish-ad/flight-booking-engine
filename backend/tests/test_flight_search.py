@@ -26,6 +26,7 @@ def airport(code):
 
 def segment(origin, destination):
     return {
+        "id": f"seg_{origin}{destination}",
         "origin": airport(origin),
         "destination": airport(destination),
         "departing_at": "2026-10-20T10:00:00",
@@ -50,7 +51,12 @@ def provider_response(segments=None):
                     "total_amount": "123.45",
                     "total_currency": "AUD",
                     "expires_at": "2026-10-01T12:00:00Z",
-                    "slices": [{"segments": segments or [segment("SYD", "MEL")]}],
+                    "slices": [
+                        {
+                            "id": "sli_test",
+                            "segments": segments or [segment("SYD", "MEL")],
+                        }
+                    ],
                 }
             ],
         }
@@ -99,6 +105,8 @@ def test_search_request_and_response(client_factory):
     assert flight_slice["stops"] == 0
     assert flight_slice["origin"]["iata_code"] == "SYD"
     assert flight_slice["destination"]["iata_code"] == "MEL"
+    assert flight_slice["id"] == "sli_test"
+    assert flight_slice["segments"][0]["id"] == "seg_SYDMEL"
     assert flight_slice["segments"][0]["flight_number"] == "123"
     assert "test-placeholder" not in response.text
 

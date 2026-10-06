@@ -13,6 +13,7 @@ from pydantic import (
 )
 
 from app.schemas.flight import CurrencyCode, FlightSlice, OfferId, PassengerId
+from app.schemas.seat_map import ServiceId
 
 PersonName = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)
@@ -42,8 +43,16 @@ class OrderPassenger(BaseModel):
 class CreateOrderRequest(BaseModel):
     offer_id: OfferId
     passengers: list[OrderPassenger] = Field(min_length=1, max_length=9)
-    amount: Decimal = Field(ge=0)
+    amount: Decimal = Field(
+        ge=0,
+        description="Flight price from /price; seat prices are added by the server",
+    )
     currency: CurrencyCode
+    services: list[ServiceId] = Field(
+        default=[],
+        max_length=50,
+        description="Seat service ids (ase_...) from /seat-maps",
+    )
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -64,6 +73,7 @@ class CreateOrderRequest(BaseModel):
                     ],
                     "amount": "125.40",
                     "currency": "AUD",
+                    "services": ["ase_0000AEdGRhtp5AUUiJnF9P"],
                 }
             ]
         }
@@ -74,6 +84,8 @@ class CreateOrderRequest(BaseModel):
         ids = [passenger.id for passenger in self.passengers]
         if len(ids) != len(set(ids)):
             raise ValueError("Passenger ids must be unique")
+        if len(self.services) != len(set(self.services)):
+            raise ValueError("Service ids must be unique")
         return self
 
 
