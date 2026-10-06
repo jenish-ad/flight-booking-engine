@@ -4,15 +4,10 @@ import jwt
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 
-from app.core.config import get_settings
-
-settings = get_settings()
+from app.core.config import Settings
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-ACCESS_TOKEN_EXPIRE = settings.access_token_expire_minutes
-SECRET_KEY = settings.secret_key.get_secret_value()
-ALGORITHM = settings.algorithm
 
 
 def hash_password(password: str) -> str:
@@ -23,16 +18,22 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def create_access_token(data: dict) -> str:
+def create_access_token(data: dict, settings: Settings) -> str:
     # Copy the supplied data so the original dictionary isn't modified
     data_to_encode = data.copy()
 
-    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE)
+    expire = datetime.now(timezone.utc) + timedelta(
+        minutes=settings.access_token_expire_minutes
+    )
 
     # Add the expiration timestamp to the JWT payload
     data_to_encode.update({"exp": expire})
 
     # Create and cryptographically sign the token
-    encoded_jwt = jwt.encode(data_to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(
+        data_to_encode,
+        settings.secret_key.get_secret_value(),
+        algorithm=settings.algorithm,
+    )
 
     return encoded_jwt

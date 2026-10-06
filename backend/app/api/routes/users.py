@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.api.deps import CurrentUser, SessionDep
+from app.api.deps import CurrentUser, SessionDep, SettingsDep
 from app.crud.users import authenticate_user, create_user, get_user_by_email
 from app.schemas.auth import Token
 from app.schemas.users import UserCreate, UserRead
@@ -43,6 +43,7 @@ def register(
 def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     session: SessionDep,
+    settings: SettingsDep,
 ) -> Token:
     user = authenticate_user(session, form_data.username, form_data.password)
 
@@ -53,7 +54,7 @@ def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    access_token = create_access_token(data={"sub": user.email})
+    access_token = create_access_token(data={"sub": user.email}, settings=settings)
     return Token(access_token=access_token, token_type="bearer")
 
 
