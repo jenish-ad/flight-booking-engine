@@ -21,6 +21,9 @@ PersonName = Annotated[
 
 PhoneNumber = Annotated[str, StringConstraints(pattern=r"^\+[1-9]\d{6,14}$")]
 
+OrderId = Annotated[str, StringConstraints(pattern=r"^ord_[A-Za-z0-9]+$")]
+CancellationId = Annotated[str, StringConstraints(pattern=r"^ore_[A-Za-z0-9]+$")]
+
 
 class OrderPassenger(BaseModel):
     id: PassengerId
@@ -95,4 +98,17 @@ class OrderResponse(BaseModel):
     total_amount: Decimal
     total_currency: str
     created_at: datetime
+    cancelled_at: datetime | None = None
     slices: list[FlightSlice]
+
+
+class OrderCancellation(BaseModel):
+    id: str = Field(description="Send this to the confirm endpoint to cancel the order")
+    order_id: str
+    refund_amount: Decimal | None = Field(
+        description="Null if the airline has not said how much will be refunded"
+    )
+    refund_currency: str | None
+    refund_to: str | None
+    expires_at: datetime = Field(description="Confirm before this time")
+    confirmed_at: datetime | None

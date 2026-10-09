@@ -5,6 +5,7 @@ import pytest
 
 from tests.test_flight_order import ORDER, provider_order
 
+SEAT_MAPS_PATH = "/offers/off_test/seat-maps"
 SEAT_MAPS_URL = "https://duffel.test/air/seat_maps?offer_id=off_test"
 
 
@@ -70,9 +71,7 @@ def test_seat_maps_request_and_response(client_factory):
         assert str(request.url) == SEAT_MAPS_URL
         return httpx.Response(200, json=SEAT_MAPS)
 
-    response = client_factory(handler).get(
-        "/flights/seat-maps", params={"offer_id": "off_test"}
-    )
+    response = client_factory(handler).get(SEAT_MAPS_PATH)
     assert response.status_code == 200
     body = response.json()
     assert body["offer_id"] == "off_test"
@@ -105,16 +104,14 @@ def test_seat_maps_request_and_response(client_factory):
 
 def test_airline_without_seat_selection(client_factory):
     client = client_factory(lambda _: httpx.Response(200, json={"data": []}))
-    response = client.get("/flights/seat-maps", params={"offer_id": "off_test"})
+    response = client.get(SEAT_MAPS_PATH)
     assert response.status_code == 200
     assert response.json()["seat_maps"] == []
 
 
-@pytest.mark.parametrize("params", [{}, {"offer_id": "offer_1"}])
-def test_invalid_offer_id(client_factory, params):
-    response = client_factory(unexpected_request).get(
-        "/flights/seat-maps", params=params
-    )
+@pytest.mark.parametrize("offer_id", ["offer_1", "ord_test", "off_"])
+def test_invalid_offer_id(client_factory, offer_id):
+    response = client_factory(unexpected_request).get(f"/offers/{offer_id}/seat-maps")
     assert response.status_code == 422
 
 
@@ -126,9 +123,7 @@ def test_provider_errors_are_mapped(client_factory, provider_status, expected_st
     def handler(request):
         return httpx.Response(provider_status, json={"errors": [{"title": "secret"}]})
 
-    response = client_factory(handler).get(
-        "/flights/seat-maps", params={"offer_id": "off_test"}
-    )
+    response = client_factory(handler).get(SEAT_MAPS_PATH)
     assert response.status_code == expected_status
     assert "secret" not in response.text
 
@@ -137,13 +132,13 @@ def test_invalid_provider_response(client_factory):
     client = client_factory(
         lambda _: httpx.Response(200, json={"data": [{"id": "sea_test"}]})
     )
-    response = client.get("/flights/seat-maps", params={"offer_id": "off_test"})
+    response = client.get(SEAT_MAPS_PATH)
     assert response.status_code == 502
 
 
 def test_seat_maps_require_login(client_factory):
     client = client_factory(unexpected_request, authenticated=False)
-    response = client.get("/flights/seat-maps", params={"offer_id": "off_test"})
+    response = client.get(SEAT_MAPS_PATH)
     assert response.status_code == 401
 
 
@@ -163,7 +158,7 @@ def test_order_with_seats_adds_seat_prices(client_factory):
         return httpx.Response(201, json=provider_order(total_amount="147.95"))
 
     response = client_factory(handler).post(
-        "/flights/order", json=ORDER | {"services": ["ase_12a", "ase_3f"]}
+        "/orders", json=ORDER | {"services": ["ase_12a", "ase_3f"]}
     )
     assert response.status_code == 201
     assert response.json()["total_amount"] == "147.95"
@@ -205,7 +200,7 @@ def test_invalid_seat_selection(client_factory, services, seat_maps, expected_st
         return httpx.Response(200, json=seat_maps)
 
     response = client_factory(handler).post(
-        "/flights/order", json=ORDER | {"services": services}
+        "/orders", json=ORDER | {"services": services}
     )
     assert response.status_code == expected_status
 
@@ -213,7 +208,7 @@ def test_invalid_seat_selection(client_factory, services, seat_maps, expected_st
 @pytest.mark.parametrize("services", [["seat_12a"], ["ase_12a", "ase_12a"], "ase_12a"])
 def test_invalid_services_are_rejected(client_factory, services):
     response = client_factory(unexpected_request).post(
-        "/flights/order", json=ORDER | {"services": services}
+        "/orders", json=ORDER | {"services": services}
     )
     assert response.status_code == 422
 
@@ -224,5 +219,5 @@ def test_order_without_seats_skips_seat_maps(client_factory):
         assert "services" not in json.loads(request.content)["data"]
         return httpx.Response(201, json=provider_order())
 
-    response = client_factory(handler).post("/flights/order", json=ORDER)
+    response = client_factory(handler).post("/orders", json=ORDER)
     assert response.status_code == 201

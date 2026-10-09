@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 import httpx
 from fastapi import FastAPI
 
-from app.api.routes import flights, users
+from app.api.routes import flights, offers, orders, users
 from app.core.db import init_db
 
 
@@ -19,3 +19,5 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 app.include_router(users.router)
 app.include_router(flights.router)
+app.include_router(offers.router)
+app.include_router(orders.router)

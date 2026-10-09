@@ -3,7 +3,7 @@ from decimal import Decimal
 import httpx
 
 from app.core.config import Settings
-from app.schemas.booking import CreateOrderRequest, OrderResponse
+from app.schemas.booking import CreateOrderRequest, OrderCancellation, OrderResponse
 from app.schemas.flight import (
     FlightOffer,
     FlightSearchRequest,
@@ -240,6 +240,48 @@ class DuffelService:
                 502, "Duffel could not create the order. Please try again later."
             )
 
+        return self._parse_order(response)
+
+    async def get_order(self, order_id: str) -> OrderResponse:
+        response = await self._request("GET", f"/air/orders/{order_id}")
+        if response.status_code == 404:
+            raise DuffelError(404, "Order not found.")
+        if not response.is_success:
+            raise DuffelError(
+                502, "Duffel could not load the order. Please try again later."
+            )
+        return self._parse_order(response)
+
+    async def create_cancellation(self, order_id: str) -> OrderCancellation:
+        """Ask Duffel for a cancellation quote. Nothing is cancelled until it is confirmed."""
+        response = await self._request(
+            "POST", "/air/order_cancellations", json={"data": {"order_id": order_id}}
+        )
+        if response.status_code in (400, 404, 409, 422):
+            raise DuffelError(409, "This order cannot be cancelled.")
+        if not response.is_success:
+            raise DuffelError(
+                502, "Duffel could not start the cancellation. Please try again later."
+            )
+        return self._parse_cancellation(response)
+
+    async def confirm_cancellation(self, cancellation_id: str) -> OrderCancellation:
+        response = await self._request(
+            "POST", f"/air/order_cancellations/{cancellation_id}/actions/confirm"
+        )
+        if response.status_code in (400, 404, 409, 410, 422):
+            raise DuffelError(
+                409,
+                "This cancellation quote has expired or was replaced. Please request a new one.",
+            )
+        if not response.is_success:
+            raise DuffelError(
+                502,
+                "Duffel could not confirm the cancellation. Please try again later.",
+            )
+        return self._parse_cancellation(response)
+
+    def _parse_order(self, response: httpx.Response) -> OrderResponse:
         try:
             data = response.json()["data"]
             return OrderResponse(
@@ -248,11 +290,30 @@ class DuffelService:
                 total_amount=data["total_amount"],
                 total_currency=data["total_currency"],
                 created_at=data["created_at"],
+                cancelled_at=data.get("cancelled_at"),
                 slices=self._normalize_slices(data["slices"]),
             )
         except (KeyError, TypeError, ValueError, IndexError, AttributeError):
             raise DuffelError(
                 502, "Duffel returned an invalid order response."
+            ) from None
+
+    @staticmethod
+    def _parse_cancellation(response: httpx.Response) -> OrderCancellation:
+        try:
+            data = response.json()["data"]
+            return OrderCancellation(
+                id=data["id"],
+                order_id=data["order_id"],
+                refund_amount=data.get("refund_amount"),
+                refund_currency=data.get("refund_currency"),
+                refund_to=data.get("refund_to"),
+                expires_at=data["expires_at"],
+                confirmed_at=data.get("confirmed_at"),
+            )
+        except (KeyError, TypeError, ValueError, AttributeError):
+            raise DuffelError(
+                502, "Duffel returned an invalid cancellation response."
             ) from None
 
     @staticmethod

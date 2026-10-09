@@ -4,8 +4,8 @@ import httpx
 import pytest
 
 AIRLINE = {"name": "Test Airways", "iata_code": "ZZ"}
+PRICE_URL = "/offers/off_test/price"
 PRICE = {
-    "offer_id": "off_test",
     "expected_amount": "123.45",
     "expected_currency": "AUD",
 }
@@ -64,7 +64,7 @@ def test_price_request_and_unchanged_price(client_factory):
         assert request.content == b""
         return httpx.Response(200, json=provider_offer())
 
-    response = client_factory(handler).post("/flights/price", json=PRICE)
+    response = client_factory(handler).post(PRICE_URL, json=PRICE)
     assert response.status_code == 200
     body = response.json()
     assert body["price_changed"] is False
@@ -91,7 +91,7 @@ def test_price_request_and_unchanged_price(client_factory):
 def test_equivalent_expected_price_is_unchanged(client_factory, changes):
     response = client_factory(
         lambda _: httpx.Response(200, json=provider_offer())
-    ).post("/flights/price", json=PRICE | changes)
+    ).post(PRICE_URL, json=PRICE | changes)
     assert response.status_code == 200
     assert response.json()["price_changed"] is False
 
@@ -103,7 +103,7 @@ def test_equivalent_expected_price_is_unchanged(client_factory, changes):
 def test_changed_price(client_factory, provider_changes):
     response = client_factory(
         lambda _: httpx.Response(200, json=provider_offer(**provider_changes))
-    ).post("/flights/price", json=PRICE)
+    ).post(PRICE_URL, json=PRICE)
     assert response.status_code == 200
     body = response.json()
     assert body["price_changed"] is True
@@ -120,7 +120,7 @@ def test_missing_payment_requirements_defaults_to_instant_payment(client_factory
     del payload["data"]["payment_requirements"]
     del payload["data"]["passenger_identity_documents_required"]
     response = client_factory(lambda _: httpx.Response(200, json=payload)).post(
-        "/flights/price", json=PRICE
+        PRICE_URL, json=PRICE
     )
     assert response.status_code == 200
     body = response.json()
@@ -133,7 +133,7 @@ def test_missing_payment_requirements_defaults_to_instant_payment(client_factory
 def test_invalid_passenger_references(client_factory, passengers):
     response = client_factory(
         lambda _: httpx.Response(200, json=provider_offer(passengers=passengers))
-    ).post("/flights/price", json=PRICE)
+    ).post(PRICE_URL, json=PRICE)
     assert response.status_code == 502
 
 
@@ -141,7 +141,7 @@ def test_expired_offer(client_factory):
     expired = (datetime.now(timezone.utc) - timedelta(minutes=1)).isoformat()
     response = client_factory(
         lambda _: httpx.Response(200, json=provider_offer(expires_at=expired))
-    ).post("/flights/price", json=PRICE)
+    ).post(PRICE_URL, json=PRICE)
     assert response.status_code == 410
     assert "expired" in response.json()["detail"]
 
@@ -163,7 +163,7 @@ def test_expired_offer(client_factory):
 def test_provider_errors_do_not_leak_secrets(client_factory, upstream, expected):
     response = client_factory(
         lambda _: httpx.Response(upstream, text="test-placeholder")
-    ).post("/flights/price", json=PRICE)
+    ).post(PRICE_URL, json=PRICE)
     assert response.status_code == expected
     assert "test-placeholder" not in response.text
     assert response.json()["detail"]
@@ -176,7 +176,7 @@ def test_transport_errors(client_factory, error, expected):
     def handler(request):
         raise error("sensitive provider details", request=request)
 
-    response = client_factory(handler).post("/flights/price", json=PRICE)
+    response = client_factory(handler).post(PRICE_URL, json=PRICE)
     assert response.status_code == expected
     assert "sensitive" not in response.text
 
@@ -185,7 +185,7 @@ def test_missing_token(client_factory):
     def handler(request):
         pytest.fail("No request should be sent without a token")
 
-    response = client_factory(handler, token="").post("/flights/price", json=PRICE)
+    response = client_factory(handler, token="").post(PRICE_URL, json=PRICE)
     assert response.status_code == 503
     assert "DUFFEL_ACCESS_TOKEN" in response.json()["detail"]
 
@@ -193,10 +193,6 @@ def test_missing_token(client_factory):
 @pytest.mark.parametrize(
     "changes",
     [
-        {"offer_id": "../orders"},
-        {"offer_id": "off_test/../../orders"},
-        {"offer_id": "ord_test"},
-        {"offer_id": "off_"},
         {"expected_amount": "-1"},
         {"expected_amount": "abc"},
         {"expected_currency": "AU"},
@@ -208,9 +204,17 @@ def test_invalid_input(client_factory, changes):
         pytest.fail("Invalid input should not reach Duffel")
 
     assert (
-        client_factory(handler).post("/flights/price", json=PRICE | changes).status_code
-        == 422
+        client_factory(handler).post(PRICE_URL, json=PRICE | changes).status_code == 422
     )
+
+
+@pytest.mark.parametrize("offer_id", ["ord_test", "off_", "off_test%2F..%2Forders"])
+def test_invalid_offer_id(client_factory, offer_id):
+    def handler(request):
+        pytest.fail("Invalid input should not reach Duffel")
+
+    response = client_factory(handler).post(f"/offers/{offer_id}/price", json=PRICE)
+    assert response.status_code in (404, 422)
 
 
 @pytest.mark.parametrize(
@@ -219,13 +223,13 @@ def test_invalid_input(client_factory, changes):
 )
 def test_malformed_offer(client_factory, payload):
     response = client_factory(lambda _: httpx.Response(200, json=payload)).post(
-        "/flights/price", json=PRICE
+        PRICE_URL, json=PRICE
     )
     assert response.status_code == 502
 
 
 def test_non_json_success(client_factory):
     response = client_factory(lambda _: httpx.Response(200, text="not JSON")).post(
-        "/flights/price", json=PRICE
+        PRICE_URL, json=PRICE
     )
     assert response.status_code == 502

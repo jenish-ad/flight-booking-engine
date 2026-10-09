@@ -76,7 +76,7 @@ def test_order_request_and_response(client_factory):
         }
         return httpx.Response(201, json=provider_order())
 
-    response = client_factory(handler).post("/flights/order", json=ORDER)
+    response = client_factory(handler).post("/orders", json=ORDER)
     assert response.status_code == 201
     body = response.json()
     assert body["id"] == "ord_test"
@@ -102,7 +102,7 @@ def test_order_request_and_response(client_factory):
 )
 def test_invalid_passenger_is_rejected(client_factory, changes):
     order = ORDER | {"passengers": [PASSENGER | changes]}
-    response = client_factory(unexpected_request).post("/flights/order", json=order)
+    response = client_factory(unexpected_request).post("/orders", json=order)
     assert response.status_code == 422
 
 
@@ -117,9 +117,7 @@ def test_invalid_passenger_is_rejected(client_factory, changes):
     ],
 )
 def test_invalid_order_is_rejected(client_factory, changes):
-    response = client_factory(unexpected_request).post(
-        "/flights/order", json=ORDER | changes
-    )
+    response = client_factory(unexpected_request).post("/orders", json=ORDER | changes)
     assert response.status_code == 422
 
 
@@ -131,7 +129,7 @@ def test_provider_errors_are_mapped(client_factory, provider_status, expected_st
     def handler(request):
         return httpx.Response(provider_status, json={"errors": [{"title": "secret"}]})
 
-    response = client_factory(handler).post("/flights/order", json=ORDER)
+    response = client_factory(handler).post("/orders", json=ORDER)
     assert response.status_code == expected_status
     assert "secret" not in response.text
 
@@ -140,5 +138,5 @@ def test_invalid_provider_response(client_factory):
     def handler(request):
         return httpx.Response(201, json={"data": {"id": "ord_test"}})
 
-    response = client_factory(handler).post("/flights/order", json=ORDER)
+    response = client_factory(handler).post("/orders", json=ORDER)
     assert response.status_code == 502

@@ -102,7 +102,6 @@ class FlightSearchResponse(BaseModel):
 
 
 class PriceConfirmRequest(BaseModel):
-    offer_id: OfferId
     expected_amount: Decimal = Field(ge=0, description="Price the user saw in search")
     expected_currency: CurrencyCode
 
@@ -110,7 +109,6 @@ class PriceConfirmRequest(BaseModel):
         json_schema_extra={
             "examples": [
                 {
-                    "offer_id": "off_0000AEdGRhtp5AUUiJnF9N",
                     "expected_amount": "125.40",
                     "expected_currency": "AUD",
                 }
