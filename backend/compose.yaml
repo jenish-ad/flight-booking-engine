@@ -2,31 +2,39 @@ services:
   fastapi-app:
     build: .
     container_name: fastapi-app
-
     ports:
       - "8000:80"
-
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/postgres
-
+      - REDIS_HOST=redis
+      - WATCHFILES_FORCE_POLLING=true
     depends_on:
       - db
+      - redis
+    volumes:
+      - .:/app
+      - /app/.venv
+    command: ["/app/.venv/bin/fastapi", "dev", "app/main.py", "--port", "80", "--host", "0.0.0.0"]
 
   db:
     image: postgres:16
     container_name: postgres-db
     restart: always
-
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: postgres
-
     ports:
       - "5432:5432"
-
     volumes:
       - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
 
 volumes:
   postgres_data:
