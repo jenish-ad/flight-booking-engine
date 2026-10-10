@@ -33,6 +33,7 @@ def get_current_user(
             token,
             settings.secret_key.get_secret_value(),
             algorithms=[settings.algorithm],
+            options={"require": ["exp", "sub"]},
         )
         token_data = TokenPayload(**payload)
     except (InvalidTokenError, ValidationError):

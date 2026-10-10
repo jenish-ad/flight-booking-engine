@@ -55,7 +55,7 @@ def login(
         )
 
     access_token = create_access_token(data={"sub": user.email}, settings=settings)
-    return Token(access_token=access_token, token_type="bearer")
+    return Token(access_token=access_token)
 
 
 @router.get("/users/me", response_model=UserRead)
