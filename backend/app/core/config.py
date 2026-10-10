@@ -24,6 +24,9 @@ class Settings(BaseModel):
     duffel_access_token: SecretStr = SecretStr("")
     duffel_base_url: HttpUrl
 
+    redis_host: str
+    redis_port: int
+
 
 @lru_cache
 def get_settings() -> Settings:
@@ -41,4 +44,6 @@ def get_settings() -> Settings:
         mail_port=os.getenv("MAIL_PORT"),
         duffel_access_token=os.getenv("DUFFEL_ACCESS_TOKEN", ""),
         duffel_base_url=os.getenv("DUFFEL_BASE_URL"),
+        redis_host=os.getenv("REDIS_HOST", "localhost"),
+        redis_port=os.getenv("REDIS_PORT", "6379"),
     )

@@ -11,6 +11,7 @@ from app.core.db import get_session
 from app.crud.users import get_user_by_email
 from app.models.users import UserInDB
 from app.schemas.auth import TokenPayload
+from app.services.cache import RedisCache
 from app.services.duffel import DuffelService
 from app.utils.security import oauth2_scheme
 
@@ -51,3 +52,10 @@ def get_duffel_service(request: Request, settings: SettingsDep) -> DuffelService
 
 
 DuffelServiceDep = Annotated[DuffelService, Depends(get_duffel_service)]
+
+
+def get_cache(request: Request) -> RedisCache:
+    return request.app.state.cache
+
+
+CacheDep = Annotated[RedisCache, Depends(get_cache)]

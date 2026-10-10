@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.pool import StaticPool
 from sqlmodel import Session, SQLModel, create_engine
 
-from app.api.deps import get_current_user, get_duffel_service
+from app.api.deps import get_cache, get_current_user, get_duffel_service
 from app.api.routes import flights, offers, orders
 from app.core.config import get_settings
 from app.core.db import get_session
@@ -16,6 +16,26 @@ from app.models.users import UserInDB
 from app.services.duffel import DuffelService
 
 USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
+
+
+class FakeCache:
+    """In-memory stand-in for RedisCache; records each set's ttl for assertions."""
+
+    def __init__(self):
+        self.data = {}
+        self.ttls = {}
+
+    async def get(self, key):
+        return self.data.get(key)
+
+    async def set(self, key, value, ttl_seconds):
+        self.data[key] = value
+        self.ttls[key] = ttl_seconds
+
+
+@pytest.fixture
+def fake_cache():
+    return FakeCache()
 
 
 @pytest.fixture
@@ -30,7 +50,7 @@ def engine():
 
 
 @pytest.fixture
-def client_factory(monkeypatch, engine):
+def client_factory(monkeypatch, engine, fake_cache):
     clients = []
     monkeypatch.setenv("DUFFEL_BASE_URL", "https://duffel.test")
 
@@ -54,6 +74,7 @@ def client_factory(monkeypatch, engine):
 
         app.dependency_overrides[get_duffel_service] = service
         app.dependency_overrides[get_session] = session
+        app.dependency_overrides[get_cache] = lambda: fake_cache
         if authenticated:
             app.dependency_overrides[get_current_user] = lambda: UserInDB(
                 id=user_id, email="user@example.com", password="hashed"
