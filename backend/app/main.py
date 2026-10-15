@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 import httpx
 from fastapi import FastAPI
 
-from app.api.routes import flights, offers, orders, users
+from app.api.routes import flights, offers, orders, places, users
 from app.core.config import get_settings
 from app.core.db import init_db
 from app.services.cache import RedisCache
@@ -23,6 +23,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(users.router)
+app.include_router(places.router)
 app.include_router(flights.router)
 app.include_router(offers.router)
 app.include_router(orders.router)

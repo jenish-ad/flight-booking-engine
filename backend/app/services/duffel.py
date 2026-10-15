@@ -10,6 +10,7 @@ from app.schemas.flight import (
     FlightSearchResponse,
     PricedOffer,
 )
+from app.schemas.places import Place, PlaceSearchResponse
 from app.schemas.seat_map import SeatMap, SeatMapsResponse
 
 
@@ -107,6 +108,31 @@ class DuffelService:
         except (KeyError, TypeError, ValueError, IndexError, AttributeError):
             raise DuffelError(
                 502, "Duffel returned an invalid flight search response."
+            ) from None
+
+    async def search_places(self, query: str) -> PlaceSearchResponse:
+        response = await self._request(
+            "GET", "/places/suggestions", params={"query": query}
+        )
+        if response.status_code in (400, 422):
+            raise DuffelError(422, "Duffel rejected the place search.")
+        if not response.is_success:
+            raise DuffelError(
+                502, "Duffel could not search places. Please try again later."
+            )
+
+        try:
+            # skip places with no iata code, we can't search flights with them
+            return PlaceSearchResponse(
+                places=[
+                    self._normalize_place(place)
+                    for place in response.json()["data"]
+                    if place.get("iata_code")
+                ]
+            )
+        except (KeyError, TypeError, ValueError, IndexError, AttributeError):
+            raise DuffelError(
+                502, "Duffel returned an invalid place search response."
             ) from None
 
     async def get_offer(self, offer_id: str) -> PricedOffer:
@@ -347,6 +373,28 @@ class DuffelService:
                 }
             )
         return slices
+
+    @staticmethod
+    def _normalize_place(place: dict) -> Place:
+        def fields(p: dict) -> dict:
+            return {
+                "id": p["id"],
+                "name": p["name"],
+                "iata_code": p["iata_code"],
+                "iata_city_code": p.get("iata_city_code"),
+                "iata_country_code": p["iata_country_code"],
+                "city_name": p.get("city_name"),
+                "time_zone": p.get("time_zone"),
+            }
+
+        # duffel sometimes sends airports on airport results too, only keep them for cities
+        airports = []
+        if place["type"] == "city":
+            airports = [
+                fields(a) for a in place.get("airports") or [] if a.get("iata_code")
+            ]
+
+        return Place(**fields(place), type=place["type"], airports=airports)
 
     @staticmethod
     def _normalize_seat_map(seat_map: dict) -> SeatMap:

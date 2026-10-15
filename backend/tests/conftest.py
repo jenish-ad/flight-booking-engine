@@ -8,7 +8,7 @@ from sqlalchemy.pool import StaticPool
 from sqlmodel import Session, SQLModel, create_engine
 
 from app.api.deps import get_cache, get_current_user, get_duffel_service
-from app.api.routes import flights, offers, orders
+from app.api.routes import flights, offers, orders, places
 from app.core.config import get_settings
 from app.core.db import get_session
 from app.models.orders import Order  # noqa: F401  (registers the table)
@@ -59,7 +59,7 @@ def client_factory(monkeypatch, engine, fake_cache):
         get_settings.cache_clear()
         settings = get_settings()
         app = FastAPI()
-        for module in (flights, offers, orders):
+        for module in (flights, offers, orders, places):
             app.include_router(module.router)
 
         async def service():
