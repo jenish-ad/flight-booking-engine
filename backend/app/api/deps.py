@@ -35,6 +35,7 @@ def get_current_user(
             algorithms=[settings.algorithm],
             options={"require": ["exp", "sub"]},
         )
+
         token_data = TokenPayload(**payload)
     except (InvalidTokenError, ValidationError):
         raise credentials_exception from None

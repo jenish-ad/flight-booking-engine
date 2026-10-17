@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException
+from fastapi.concurrency import run_in_threadpool
 from sqlmodel import Session
 
 from app.api.deps import CurrentUser, DuffelServiceDep, SessionDep
@@ -19,9 +20,9 @@ from app.services.duffel import DuffelError
 router = APIRouter(prefix="/orders", tags=["orders"])
 
 
-def get_owned_order(session: Session, user: UserInDB, order_id: str) -> Order:
+async def get_owned_order(session: Session, user: UserInDB, order_id: str) -> Order:
     # 404 rather than 403 so other users can't tell whether an order id exists.
-    order = crud.get_user_order(session, user.id, order_id)
+    order = await run_in_threadpool(crud.get_user_order, session, user.id, order_id)
     if order is None:
         raise HTTPException(status_code=404, detail="Order not found")
     return order
@@ -44,7 +45,7 @@ async def create_order(
     except DuffelError as exc:
         raise HTTPException(status_code=exc.status_code, detail=exc.detail) from None
 
-    crud.create_order(session, current_user.id, booked)
+    await run_in_threadpool(crud.create_order, session, current_user.id, booked)
     return booked
 
 
@@ -55,7 +56,7 @@ async def get_order(
     session: SessionDep,
     current_user: CurrentUser,
 ) -> OrderResponse:
-    get_owned_order(session, current_user, order_id)
+    await get_owned_order(session, current_user, order_id)
     try:
         return await service.get_order(order_id)
     except DuffelError as exc:
@@ -72,14 +73,14 @@ async def request_cancellation(
     current_user: CurrentUser,
 ) -> OrderCancellation:
     """Get a refund quote. The order is not cancelled until the quote is confirmed."""
-    order = get_owned_order(session, current_user, order_id)
+    order = await get_owned_order(session, current_user, order_id)
     ensure_not_cancelled(order)
     try:
         quote = await service.create_cancellation(order.duffel_order_id)
     except DuffelError as exc:
         raise HTTPException(status_code=exc.status_code, detail=exc.detail) from None
 
-    crud.set_pending_cancellation(session, order, quote.id)
+    await run_in_threadpool(crud.set_pending_cancellation, session, order, quote.id)
     return quote
 
 
@@ -94,7 +95,7 @@ async def confirm_cancellation(
     session: SessionDep,
     current_user: CurrentUser,
 ) -> OrderCancellation:
-    order = get_owned_order(session, current_user, order_id)
+    order = await get_owned_order(session, current_user, order_id)
     ensure_not_cancelled(order)
     # Only the latest quote requested for this order can be confirmed.
     if order.pending_cancellation_id != cancellation_id:
@@ -105,7 +106,10 @@ async def confirm_cancellation(
         raise HTTPException(status_code=exc.status_code, detail=exc.detail) from None
 
     # Marked cancelled only after Duffel confirms, so a failed call leaves it bookable.
-    crud.mark_order_cancelled(
-        session, order, cancellation.confirmed_at or datetime.now(timezone.utc)
+    await run_in_threadpool(
+        crud.mark_order_cancelled,
+        session,
+        order,
+        cancellation.confirmed_at or datetime.now(timezone.utc),
     )
     return cancellation

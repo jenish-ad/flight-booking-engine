@@ -33,7 +33,7 @@ def create_access_token(data: dict, settings: Settings) -> str:
     encoded_jwt = jwt.encode(
         data_to_encode,
         settings.secret_key.get_secret_value(),
-        algorithm=settings.algorithm,
+        settings.algorithm,
     )
 
     return encoded_jwt
