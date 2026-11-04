@@ -32,11 +32,13 @@ export default function OfferStep({
   const [state, setState] = useState<State>({ status: "loading" });
   const started = useRef(false);
 
+  // When returning to this step, use the last confirmed price as the fallback.
   const amount = expectedAmount ?? draft?.priced?.offer.total_amount;
   const currency = expectedCurrency ?? draft?.priced?.offer.total_currency;
   const missing = draft !== undefined && (!amount || !currency);
 
   useEffect(() => {
+    // Wait for the saved draft before checking the price, and only start once.
     if (draft === undefined || missing || started.current) return;
     started.current = true;
 

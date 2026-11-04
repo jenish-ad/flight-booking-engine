@@ -24,6 +24,7 @@ const PHONE = /^\+[1-9]\d{6,14}$/;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function normalisePhone(value: string) {
+  // Accept "+977 980-123 4567" and send "+9779801234567".
   const trimmed = value.trim();
   return (trimmed.startsWith("+") ? "+" : "") + trimmed.replace(/\D/g, "");
 }

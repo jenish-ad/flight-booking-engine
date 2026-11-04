@@ -38,6 +38,7 @@ export default function AuthForm({ mode, next }: { mode: "login" | "register"; n
       setPending(false);
       return;
     }
+    // Reload the page so server components pick up the new session cookie.
     window.location.assign(next);
   }
 

@@ -6,6 +6,7 @@ import Logo from "@/components/layout/logo";
 export default function NotFound() {
   return (
     <>
+      {/* Plain header: reading the session here would make every page dynamic. */}
       <header className="mx-auto w-full max-w-295 px-[5%] py-5 xl:px-0">
         <Logo />
       </header>

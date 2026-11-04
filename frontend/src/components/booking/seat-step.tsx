@@ -58,6 +58,7 @@ function SeatPicker({ draft, offerId }: { draft: BookingDraft; offerId: string }
       else delete forSegment[passengerId];
       return { ...current, seats: { ...current.seats, [segmentId]: forSegment } };
     });
+    // Move on to the next traveller still without a seat on this flight.
     if (seat) {
       const taken = { ...(draft.seats[segmentId] ?? {}), [passengerId]: seat };
       const next = passengers.find((passenger) => !taken[passenger.id]);

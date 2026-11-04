@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/api/server";
 import AccountMenu from "./account-menu";
 import Logo from "./logo";
 
+// Header for every page except the home page, which has its own floating navbar.
 export default async function SiteHeader() {
   const user = await getCurrentUser().catch(() => null);
   return (

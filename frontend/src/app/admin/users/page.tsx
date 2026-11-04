@@ -35,7 +35,7 @@ export default async function AdminUsers({ searchParams }: PageProps<"/admin/use
 
       {list.users.length ? (
         <div className="panel overflow-x-auto">
-          <table className="w-full min-w-[520px] text-left text-sm">
+          <table className="w-full min-w-130 text-left text-sm">
             <thead className="border-b border-line text-xs text-slate">
               <tr>
                 <th className="px-5 py-3 font-semibold">Email</th>

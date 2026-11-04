@@ -41,7 +41,7 @@ export default async function AdminOrders({ searchParams }: PageProps<"/admin/or
 
       {list.orders.length ? (
         <div className="panel overflow-x-auto">
-          <table className="w-full min-w-[680px] text-left text-sm">
+          <table className="w-full min-w-170 text-left text-sm">
             <thead className="border-b border-line text-xs text-slate">
               <tr>
                 <th className="px-5 py-3 font-semibold">Reference</th>

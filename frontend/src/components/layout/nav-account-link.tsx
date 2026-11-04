@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+// The home page is prerendered, so it asks who is signed in after it loads.
 export default function NavAccountLink({ className }: { className: string }) {
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
 

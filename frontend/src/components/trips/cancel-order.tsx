@@ -17,6 +17,7 @@ const REFUND_TO: Record<string, string> = {
   arc_bsp_cash: "the original payment method",
 };
 
+// Get a refund quote first, then confirm it before it expires.
 export default function CancelOrder({ orderId }: { orderId: string }) {
   const router = useRouter();
   const [quote, setQuote] = useState<OrderCancellation | null>(null);

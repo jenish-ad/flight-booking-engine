@@ -1,3 +1,4 @@
+// Plain GET form so filters live in the URL and survive refresh and sharing.
 export default function SearchBar({
   action,
   placeholder,

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect } from "react";
 
+// Next 16 passes `retry` (formerly `reset`).
 export default function ErrorPage({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
   useEffect(() => {
     console.error(error);

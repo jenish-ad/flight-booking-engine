@@ -27,7 +27,7 @@ type DestinationCardProps = (typeof destinations)[number] & { number: number };
 
 function DestinationCard({ number, city, country, mood, detail, colors }: DestinationCardProps) {
   return (
-    <article className="group overflow-clip rounded-[20px] border border-ink/6 bg-white shadow-[0_8px_28px_#243b4908] transition-[transform,box-shadow] duration-350 ease-in-out focus-within:shadow-[0_20px_40px_#243b491c] hover:shadow-[0_20px_40px_#243b491c] motion-safe:focus-within:-translate-y-2 motion-safe:hover:-translate-y-2 motion-reduce:transition-none">
+    <article className="group overflow-clip rounded-[20px] border border-ink/6 bg-white shadow-[0_8px_28px_#243b4908] transition-[transform,box-shadow] duration-350 ease-in-out focus-within:shadow-[0_20px_40px_#243b491c] hover:shadow-[0_20px_40px_#243b491c] motion-safe:focus-within:-translate-y-1.75 motion-safe:hover:-translate-y-1.75 motion-reduce:transition-none">
       <div className={`relative h-45 overflow-hidden ${colors}`} aria-hidden="true">
         <span className="absolute top-4.5 left-4.5 text-[11px] font-medium tabular-nums">{String(number).padStart(2, "0")}</span>
         <svg className="size-full transition-transform duration-650 ease-out-expo motion-safe:group-hover:scale-[1.06] motion-reduce:transition-none" viewBox="0 0 300 180" preserveAspectRatio="xMidYMid slice">

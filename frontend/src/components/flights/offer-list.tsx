@@ -100,7 +100,7 @@ export default function OfferList({ offers }: { offers: FlightOffer[] }) {
         {airlines.length > 1 && (
           <label className="grid gap-1.5 text-xs font-semibold text-slate">
             Airline
-            <select className="field-input h-[42px] w-auto pr-8" value={airline} onChange={(event) => setAirline(event.target.value)}>
+            <select className="field-input h-10.5 w-auto pr-8" value={airline} onChange={(event) => setAirline(event.target.value)}>
               <option value="all">All airlines</option>
               {airlines.map((name) => (
                 <option key={name} value={name}>

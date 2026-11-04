@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { SESSION_COOKIE } from "./lib/config";
 
+// Redirect to login early when there is no session cookie.
+// The backend still validates the token; admin pages also check permissions on the server.
 export function proxy(request: NextRequest) {
   if (request.cookies.has(SESSION_COOKIE)) return NextResponse.next();
   const login = new URL("/login", request.url);

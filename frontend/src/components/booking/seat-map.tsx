@@ -187,8 +187,8 @@ export default function SeatMap({ seatMap, passengers, activePassengerId, select
                         <div key={rowIndex} className="relative flex items-center gap-1 sm:gap-1.5">
                           {overWing && (
                             <>
-                              <span className="absolute top-0 -left-[30px] h-full w-2.5 bg-line sm:-left-[34px]" aria-hidden="true" />
-                              <span className="absolute top-0 -right-[30px] h-full w-2.5 bg-line sm:-right-[34px]" aria-hidden="true" />
+                              <span className="absolute top-0 -left-7.5 h-full w-2.5 bg-line sm:-left-8.5" aria-hidden="true" />
+                              <span className="absolute top-0 -right-7.5 h-full w-2.5 bg-line sm:-right-8.5" aria-hidden="true" />
                             </>
                           )}
                           <span className="w-6 shrink-0 text-right text-[11px] font-semibold text-slate tabular-nums">{number}</span>

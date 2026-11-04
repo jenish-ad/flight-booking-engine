@@ -10,6 +10,7 @@ import SliceDetails from "./slice-details";
 import SliceSummary from "./slice-summary";
 
 export function bookingHref(offer: FlightOffer) {
+  // Pass along the displayed price so /price can check whether it has changed.
   const params = new URLSearchParams({ amount: offer.total_amount, currency: offer.total_currency });
   return `/booking/${offer.id}?${params}`;
 }

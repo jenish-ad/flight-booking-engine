@@ -16,7 +16,7 @@ const panel =
 export default function Navbar() {
   return (
     <nav data-motion="nav" className="fixed inset-x-0 top-4 z-50 mx-auto flex w-[95%] items-stretch">
-      <div className={`${panel} flex min-w-0 flex-1 items-center justify-between gap-3 px-5 py-2.5 sm:py-[11px] sm:pr-8 sm:pl-6`}>
+      <div className={`${panel} flex min-w-0 flex-1 items-center justify-between gap-3 px-5 py-2.5 sm:py-2.75 sm:pr-8 sm:pl-6`}>
         <Logo />
         <div className="flex flex-wrap justify-end gap-x-3 sm:gap-x-8">
           {links.map((link) => (
@@ -32,7 +32,7 @@ export default function Navbar() {
         </div>
       </div>
 
-      <span className="relative z-1 -mx-2 hidden w-5.5 flex-col justify-center gap-[5px] *:h-[3px] *:rounded-xs *:bg-forest-dark sm:flex" aria-hidden="true">
+      <span className="relative z-1 -mx-2 hidden w-5.5 flex-col justify-center gap-1.25 *:h-0.75 *:rounded-xs *:bg-forest-dark sm:flex" aria-hidden="true">
         <span />
         <span className="opacity-75" />
         <span />

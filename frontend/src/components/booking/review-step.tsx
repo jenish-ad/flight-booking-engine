@@ -32,6 +32,7 @@ function Review({ draft, offerId }: { draft: BookingDraft; offerId: string }) {
     const order: CreateOrderRequest = {
       offer_id: offerId,
       passengers: draft.passengers,
+      // Send only the fare; the backend adds current seat prices from the live seat map.
       amount: offer.total_amount,
       currency: offer.total_currency,
       services: seats.map((seat) => seat.serviceId),

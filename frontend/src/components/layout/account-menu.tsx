@@ -47,7 +47,7 @@ export default function AccountMenu({ user }: { user: User | null }) {
     <div ref={menu} className="relative">
       <button
         type="button"
-        className="btn btn-secondary max-w-[200px] px-4 py-2"
+        className="btn btn-secondary max-w-50 px-4 py-2"
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => setOpen((value) => !value)}

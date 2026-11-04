@@ -5,6 +5,7 @@ import Footer from "@/components/layout/footer";
 import SiteHeader from "@/components/layout/site-header";
 import { getCurrentUser } from "@/lib/api/server";
 
+// Keep non-admins off these pages. The backend enforces access through AdminUser.
 export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
   const user = await getCurrentUser().catch(() => null);
   if (!user) redirect("/login?next=/admin");

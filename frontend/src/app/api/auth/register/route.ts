@@ -11,6 +11,7 @@ export async function POST(request: Request) {
 
   let response: Response;
   try {
+    // Keep the trailing slash to match the backend route.
     response = await fetch(`${BACKEND_URL}/register/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
