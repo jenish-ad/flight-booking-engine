@@ -7,7 +7,6 @@ import { BACKEND_URL } from "../config";
 import { sessionCookie } from "./session";
 
 export async function logIn(email: string, password: string, secure: boolean) {
-  // FastAPI expects form data here, so we send the email as the `username` field.
   let response: Response;
   try {
     response = await fetch(`${BACKEND_URL}/token`, {
