@@ -18,7 +18,6 @@ const keyframes: Record<string, Keyframe[]> = {
     { opacity: 0, transform: "translateY(-12px)" },
     { opacity: 1, transform: "translateY(0)" },
   ],
-  // The plane moves across and climbs on separate curves so its path bends.
   flightAcross: [
     { transform: "translate3d(calc(-90vw - 50%), -50%, 0) scale(0.45)" },
     { transform: "translate3d(calc(110vw + 100%), -50%, 0) scale(3.2)" },
@@ -94,14 +93,12 @@ export default function IntroMotion({ children }: { children: ReactNode }) {
       stopAll();
       if (reducedMotion.matches) return;
 
-      // Page content
       animate("nav", keyframes.nav, { duration: 900, easing: EASE_OUT });
       animate("eyebrow", fadeUp, { duration: 1200, delay: 500, easing: EASE_OUT });
       animate("heading", fadeUp, { duration: 1200, delay: 800, easing: EASE_OUT });
       animate("subtitle", fadeUp, { duration: 1200, delay: 1200, easing: EASE_OUT });
       formAnimation = animate("search", fadeUp, { duration: 1200, delay: 2000, easing: EASE_OUT });
 
-      // Plane fly-by
       const flight = { duration: FLIGHT_DURATION };
       animate("flight", keyframes.flightAcross, { ...flight, easing: "cubic-bezier(0.5, 0.1, 0.75, 0.55)" });
       animate("flight", keyframes.flightClimb, { ...flight, easing: CLIMB });
@@ -117,7 +114,6 @@ export default function IntroMotion({ children }: { children: ReactNode }) {
       animate("journey", keyframes.journey, { duration: 5500, delay: 400, easing: "ease-in-out" });
     };
 
-    // Skip the form's fade-in if someone tabs into it early.
     const form = scope.querySelector('[data-motion="search"]');
     const showForm = () => formAnimation?.finish();
 
