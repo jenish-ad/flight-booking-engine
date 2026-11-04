@@ -1,9 +1,7 @@
 import type { CabinClass, FlightSlice } from "./types";
 
-// Shared helpers for formatting flight data in the UI.
 const WALL = /^(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)/;
 
-// Pull out the key pieces of a wall-clock timestamp so we can format dates consistently.
 function wallParts(iso: string) {
   const match = WALL.exec(iso);
   if (!match) return null;
@@ -11,7 +9,6 @@ function wallParts(iso: string) {
   return { year, month, day, hour, minute };
 }
 
-// Format currency values in a readable way and fall back cleanly if Intl cannot handle a code.
 export function formatMoney(amount: string | number, currency: string) {
   const value = typeof amount === "string" ? Number(amount) : amount;
   try {
@@ -25,7 +22,6 @@ export function formatMoney(amount: string | number, currency: string) {
   }
 }
 
-// Add prices together without losing precision in decimal values.
 export function addMoney(...amounts: (string | number)[]) {
   const total = amounts.reduce<number>(
     (sum, amount) => sum + Math.round(Number(amount) * 1000),
@@ -34,7 +30,17 @@ export function addMoney(...amounts: (string | number)[]) {
   return (total / 1000).toFixed(2);
 }
 
-// Build a short date label like "Mon, 12 Oct".
+export function wallTime(iso: string) {
+  const parts = wallParts(iso);
+  if (!parts) return "";
+  return new Intl.DateTimeFormat("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "UTC",
+  }).format(Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute));
+}
+
 export function wallDate(
   iso: string,
   options: Intl.DateTimeFormatOptions = {
@@ -98,7 +104,6 @@ function zoneOffsetMs(timeZone: string, utcMs: number) {
   );
 }
 
-// Convert a local flight time to UTC, taking the airport timezone into account when needed.
 export function toUtcMs(iso: string, timeZone?: string | null) {
   if (/[zZ]|[+-]\d{2}:?\d{2}$/.test(iso)) return Date.parse(iso);
   const parts = wallParts(iso);
@@ -113,7 +118,6 @@ export function toUtcMs(iso: string, timeZone?: string | null) {
   }
 }
 
-// Work out flight duration in minutes, keeping it at zero if the values are invalid.
 export function minutesBetween(
   start: string,
   startZone: string | null | undefined,
@@ -135,7 +139,6 @@ export function sliceMinutes(slice: FlightSlice) {
   );
 }
 
-// Turn total minutes into a user-friendly duration string.
 export function formatDuration(totalMinutes: number) {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;

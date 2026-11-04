@@ -1,4 +1,3 @@
-// Decimals in pydantic are implemented as strings to avoid floating point precision issues.
 export type CabinClass = "economy" | "premium_economy" | "business" | "first";
 
 export interface Airline {
@@ -91,8 +90,6 @@ export interface PlaceSearchResponse {
   places: Place[];
 }
 
-// Seat maps
-
 export interface SeatService {
   id: string;
   passenger_id: string;
@@ -142,8 +139,6 @@ export interface SeatMapsResponse {
   offer_id: string;
   seat_maps: SeatMap[];
 }
-
-// Orders
 
 export type Title = "mr" | "ms" | "mrs" | "miss" | "dr";
 export type Gender = "m" | "f";
@@ -203,8 +198,6 @@ export interface OrderList {
   orders: OrderSummary[];
   total: number;
 }
-
-// Users and admin
 
 export interface User {
   id: string;

@@ -13,10 +13,18 @@
   --color-slate: #5d6776;
   --color-forest: #314d46;
   --color-forest-dark: #203b35;
+  --color-forest-shadow: rgba(49, 77, 70, 0.15);
   --color-sage: #577366;
   --color-clay: #c07a52;
   --color-line: #e6dfd0;
   --color-line-dashed: #d8cfbc;
+  --color-mist: #f1ede2;
+  --color-danger: #a4402f;
+  --color-danger-deep: #8a3426;
+  --color-danger-soft: #f6e4de;
+  --color-warn-soft: #f7ecd6;
+  --color-ok-soft: #e1ebe5;
+  --color-muted: #a7aca6;
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -61,22 +69,27 @@
     @apply text-[13px] font-semibold text-forest underline-offset-6;
   }
 
-  /* Flight search form */
   .search-field {
-    @apply grid min-w-0 cursor-text content-center gap-1 border-dashed border-line-dashed px-3.5 py-3 text-xs font-semibold text-[#7b8580] transition-colors duration-200 hover:bg-[#f8f4ea] focus-within:bg-[#f4f0e4] focus-within:shadow-[inset_0_-2px_0_var(--color-forest)] sm:px-5.5 sm:py-4 motion-reduce:transition-none;
+    @apply grid min-w-0 cursor-text content-center gap-1 border-dashed border-line-dashed px-3.5 py-3 text-xs font-semibold text-slate transition-colors duration-200 hover:bg-mist focus-within:bg-mist focus-within:shadow-[inset_0_-2px_0_var(--color-forest)] sm:px-5.5 sm:py-4 motion-reduce:transition-none;
   }
 
   .search-input {
-    @apply h-6.5 w-full min-w-0 rounded-none border-0 bg-transparent p-0 text-xs font-semibold text-ink outline-none placeholder:font-medium placeholder:text-[#a7aca6] sm:text-sm;
+    @apply h-6.5 w-full min-w-0 rounded-none border-0 bg-transparent p-0 text-xs font-semibold text-ink outline-none placeholder:font-medium placeholder:text-muted sm:text-sm;
   }
 
-  /* Chevron for the travelers select */
   .search-select-field {
     @apply relative cursor-pointer;
   }
 
   .search-select-field::after {
-    @apply pointer-events-none absolute right-3.5 bottom-[21px] h-2 w-3 rotate-45 border-r-2 border-b-2 border-forest transition-transform duration-250 content-[''] sm:right-5.5 sm:bottom-[25px] motion-reduce:transition-none;
+    @apply pointer-events-none absolute right-3.5 h-2 w-3 rotate-45 border-r-2 border-b-2 border-forest transition-transform duration-250 content-[''] sm:right-5.5 motion-reduce:transition-none;
+    bottom: 21px;
+  }
+
+  @media (min-width: 901px) {
+    .search-select-field::after {
+      bottom: 25px;
+    }
   }
 
   .search-select-field:hover::after {
@@ -99,7 +112,6 @@
     display: none;
   }
 
-  /* Styled dropdown in browsers that support customizable selects */
   @supports (appearance: base-select) {
     .search-select,
     .search-select::picker(select) {
@@ -107,7 +119,7 @@
     }
 
     .search-select::picker(select) {
-      @apply mt-5 min-w-50 rounded-xl border border-line bg-paper p-1.5 shadow-[0_18px_40px_-20px_#243b4973];
+      @apply mt-5 min-w-50 rounded-xl border border-line bg-paper p-1.5 shadow-[0_18px_40px_-20px_rgba(36,59,73,0.45)];
     }
 
     .search-select option {
@@ -116,11 +128,66 @@
 
     .search-select option:hover,
     .search-select option:focus-visible {
-      @apply bg-[#f1ede2] outline-none;
+      @apply bg-mist outline-none;
     }
 
     .search-select option:checked {
       @apply bg-forest font-semibold text-cream;
     }
+  }
+
+  .btn {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold whitespace-nowrap transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest disabled:cursor-not-allowed disabled:opacity-55 motion-reduce:transition-none;
+  }
+
+  .btn-primary {
+    @apply bg-forest text-cream hover:bg-forest-dark;
+  }
+
+  .btn-secondary {
+    @apply border border-line bg-paper text-forest hover:bg-mist;
+  }
+
+  .btn-danger {
+    @apply bg-danger text-cream hover:bg-danger-deep;
+  }
+
+  .btn-ghost {
+    @apply px-3 text-forest hover:bg-mist;
+  }
+
+  .field-label {
+    @apply grid gap-1.5 text-[13px] font-semibold text-ink;
+  }
+
+  .field-input {
+    @apply h-11 w-full min-w-0 rounded-xl border border-line bg-paper px-3.5 text-sm font-medium text-ink outline-none transition-[border-color,box-shadow] duration-150 placeholder:font-normal placeholder:text-muted focus:border-forest focus:shadow-[0_0_0_3px_var(--color-forest-shadow)] aria-invalid:border-danger motion-reduce:transition-none;
+  }
+
+  .field-hint {
+    @apply text-xs font-normal text-slate;
+  }
+
+  .field-error {
+    @apply text-xs font-medium text-danger;
+  }
+
+  .panel {
+    @apply rounded-2xl border border-line bg-paper;
+  }
+
+  .page {
+    @apply mx-auto w-full max-w-[1180px] flex-1 px-[5%] py-10 sm:py-14 xl:px-0;
+  }
+
+  .page-title {
+    @apply font-serif text-[34px] leading-[1.08] sm:text-[44px];
+  }
+
+  .ticket-perforation {
+    background-image: radial-gradient(circle, var(--color-line-dashed) 1.5px, transparent 1.6px);
+    background-size: 10px 10px;
+    background-repeat: repeat-x;
+    background-position: center;
   }
 }
