@@ -18,6 +18,34 @@ from app.services.duffel import DuffelService
 USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
 
 
+@pytest.fixture(autouse=True)
+def test_settings(monkeypatch):
+    """Use dummy configuration so tests need no local .env or CI secrets."""
+    # Prevent local credentials from leaking into otherwise mocked tests.
+    monkeypatch.setattr("app.core.config.load_dotenv", lambda *args, **kwargs: None)
+    values = {
+        "DATABASE_URL": "sqlite://",
+        "SECRET_KEY": "test-only-signing-key-at-least-32-characters",
+        "ALGORITHM": "HS256",
+        "ACCESS_TOKEN_EXPIRE": "30",
+        "MAIL_USERNAME": "test@example.com",
+        "MAIL_PASSWORD": "test-only-password",
+        "MAIL_FROM_NAME": "test@example.com",
+        "MAIL_SERVER": "smtp.example.com",
+        "MAIL_PORT": "587",
+        "DUFFEL_ACCESS_TOKEN": "test-placeholder",
+        "DUFFEL_BASE_URL": "https://duffel.test",
+        "REDIS_HOST": "localhost",
+        "REDIS_PORT": "6379",
+    }
+    for name, value in values.items():
+        monkeypatch.setenv(name, value)
+    # Settings are cached, so clear them before and after each test.
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
+
+
 class FakeCache:
     """In-memory stand-in for RedisCache; records each set's ttl for assertions."""
 

@@ -1,64 +1,65 @@
-# Pre-commit hooks for the backend and frontend.
-#
-# Install:  uv run --project backend python -m pre_commit install
-# Run all:  uv run --project backend python -m pre_commit run --all-files
-#
-# All hooks are defined locally and scoped by path, so backend hooks run only
-# when backend files are staged and frontend hooks only when frontend files are.
-#
-# Backend hooks are invoked via `uv run ... python -m` so that they use the tool
-# versions pinned in the backend environment and do not depend on virtualenv
-# executable shims, which may be blocked by Windows Application Control policies.
-#
-# Frontend hooks require dependencies to be installed (`npm install` in frontend/).
+# Install the Git hook once from the repository root:
+#   uv run --project Backend python -m pre_commit install
+# Run the hooks manually against all tracked files:
+#   uv run --project Backend python -m pre_commit run --all-files
+# On a normal commit, pre-commit checks the files staged for that commit.
 repos:
+  # "local" means these hook commands are defined here, rather than downloaded
+  # from a separate hook repository.
   - repo: local
     hooks:
-      # ---------------------------------------------------------------- Backend
-
-      # Lint staged Python files and apply safe automatic fixes.
-      # If files are modified, the commit is aborted; re-stage and commit again.
+      # id identifies the hook; name is the label printed when it runs.
       - id: ruff-check
         name: ruff check
-        entry: uv run --project backend python -m ruff check --fix
+        # uv selects Backend's environment; python -m runs Ruff as a module.
+        # --fix applies available safe lint fixes. Review and stage any edits,
+        # then commit again if pre-commit reports that files were modified.
+        entry: uv run --project Backend python -m ruff check --fix
+        # Use installed tools instead of having pre-commit create an environment.
+        # Install backend/frontend dependencies before running these hooks.
         language: system
+        # types and files both apply: this hook receives matching Python files.
         types: [python]
-        files: ^backend/
+        # files is a case-sensitive regular expression. ^ means path start.
+        # Backend/ must match the tracked directory's capitalization exactly.
+        files: ^Backend/
 
-      # Format staged Python files.
-      # If files are modified, the commit is aborted; re-stage and commit again.
+      # Apply consistent Python formatting to matching files.
       - id: ruff-format
         name: ruff format
-        entry: uv run --project backend python -m ruff format
+        entry: uv run --project Backend python -m ruff format
         language: system
         types: [python]
-        files: ^backend/
+        files: ^Backend/
 
-      # Run the full backend test suite when any backend file changes.
-      # External services are mocked, so the suite runs offline.
-      # Invoked without a shell wrapper to avoid resolving to WSL bash on Windows.
+      # Run the complete backend test suite whenever a Backend file matches.
       - id: pytest
         name: pytest
-        entry: uv run --project backend python -m pytest backend/tests
+        entry: uv run --project Backend python -m pytest Backend/tests
         language: system
+        # Do not append staged filenames: pytest already receives Backend/tests.
+        # This runs the full suite even if only one backend file was staged.
         pass_filenames: false
-        files: ^backend/
+        files: ^Backend/
 
-      # --------------------------------------------------------------- Frontend
-
-      # Lint the frontend with the project's ESLint configuration.
+      # --prefix tells npm which project's package.json/scripts to use.
+      # "lint" is the script defined in Frontend/package.json.
       - id: eslint
         name: eslint
-        entry: npm --prefix frontend run lint
+        entry: npm --prefix Frontend run lint
         language: system
+        # The lint script checks the project; it does not need staged filenames.
         pass_filenames: false
-        files: ^frontend/.*\.(js|jsx|ts|tsx|mjs)$
+        # \. matches a literal dot; (a|b) selects extensions; $ means path end.
+        files: ^Frontend/.*\.(js|jsx|ts|tsx|mjs)$
 
-      # Type-check the frontend without emitting build output.
-      # Runs on the whole project, as type errors can span multiple files.
+      # Check frontend TypeScript without generating JavaScript output.
       - id: tsc
         name: tsc
-        entry: npx --prefix frontend tsc --noEmit -p frontend
+        # Generate Next.js route helpers and image declarations before tsc.
+        # A fresh checkout has neither .next/types nor next-env.d.ts yet.
+        entry: npm --prefix Frontend run typecheck
         language: system
+        # Type errors can span files, so check the project as a whole.
         pass_filenames: false
-        files: ^frontend/.*\.(ts|tsx)$
+        files: ^Frontend/.*\.(ts|tsx)$

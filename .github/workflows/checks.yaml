@@ -1,0 +1,56 @@
+# This name appears in the repository's GitHub Actions tab.
+name: Code checks
+
+# Start the workflow when code is pushed or a pull request is opened/updated.
+# A push to an open pull request can trigger both events.
+on:
+  push:
+  pull_request:
+
+# Give the workflow's GitHub token read-only access to repository contents.
+permissions:
+  contents: read
+
+jobs:
+  # "checks" is the job identifier. Steps in this job run in order.
+  checks:
+    # GitHub provides a fresh Linux virtual machine for this job.
+    runs-on: ubuntu-latest
+
+    steps:
+      # Download the repository so later commands can read its files.
+      # The @v4 suffix selects the action's major version.
+      - uses: actions/checkout@v4
+
+      # Match the Python version used locally and in the backend Docker image.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      # Make Node.js and its npm/npx commands available for frontend checks.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # uv installs Python dependencies and runs commands in the project environment.
+      - name: Install uv
+        run: python -m pip install uv
+
+      # Select Backend/ as the Python project and install its dependencies,
+      # including the dev tools used by the hooks. --frozen uses uv.lock
+      # without updating it; keep that lockfile committed and up to date.
+      - name: Install backend dependencies
+        run: uv sync --project Backend --frozen
+
+      # Run npm inside Frontend/. npm ci installs from package-lock.json,
+      # and fails if it disagrees with package.json instead of rewriting it.
+      - name: Install frontend dependencies
+        working-directory: Frontend
+        run: npm ci
+
+      # Reuse .pre-commit-config.yaml so local commits and CI use the same checks.
+      # --all-files checks all tracked files, rather than only staged files.
+      # A failing hook fails this step. Ruff may also change files and fail;
+      # CI does not commit those fixes, so apply and commit them locally.
+      - name: Run all pre-commit checks
+        run: uv run --project Backend python -m pre_commit run --all-files
